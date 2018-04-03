@@ -234,6 +234,7 @@ func SubmitAuxBlock(param map[string]interface{}) map[string]interface{} {
 	auxPow := param["sideauxpow"].(string)
 	temp, _ := HexStringToBytes(auxPow)
 	r := bytes.NewBuffer(temp)
+  
 	Pow.MsgBlock.BlockData[blockHash].Blockdata.SideAuxPow.Deserialize(r)
 	_, _, err := ledger.DefaultLedger.Blockchain.AddBlock(Pow.MsgBlock.BlockData[blockHash])
 	if err != nil {
