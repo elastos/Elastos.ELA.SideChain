@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"io"
 
-	. "github.com/elastos/Elastos.ELA.SideChain/common"
-	"github.com/elastos/Elastos.ELA.SideChain/common/log"
+	"github.com/elastos/Elastos.ELA.Core/common/log"
+	tx "github.com/elastos/Elastos.ELA.Core/core/transaction"
+	. "github.com/elastos/Elastos.ELA.Core/net/protocol"
 	"github.com/elastos/Elastos.ELA.SideChain/consensus/pow"
-	"github.com/elastos/Elastos.ELA.SideChain/core/asset"
-	. "github.com/elastos/Elastos.ELA.SideChain/core/transaction"
-	tx "github.com/elastos/Elastos.ELA.SideChain/core/transaction"
 	"github.com/elastos/Elastos.ELA.SideChain/core/transaction/payload"
-	. "github.com/elastos/Elastos.ELA.SideChain/errors"
-	. "github.com/elastos/Elastos.ELA.SideChain/net/protocol"
+	. "github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.Utility/core/asset"
+	. "github.com/elastos/Elastos.ELA.Utility/core/transaction"
+	uti_payload "github.com/elastos/Elastos.ELA.Utility/core/transaction/payload"
+	. "github.com/elastos/Elastos.ELA.Utility/errors"
 )
 
 const TlsPort = 443
@@ -154,19 +155,19 @@ type TransferCrossChainAssetInfo struct {
 
 func TransPayloadToHex(p Payload) PayloadInfo {
 	switch object := p.(type) {
-	case *payload.CoinBase:
+	case *uti_payload.CoinBase:
 		obj := new(CoinbaseInfo)
 		obj.CoinbaseData = string(object.CoinbaseData)
 		return obj
-	case *payload.RegisterAsset:
+	case *uti_payload.RegisterAsset:
 		obj := new(RegisterAssetInfo)
 		obj.Asset = object.Asset
 		obj.Amount = object.Amount.String()
 		obj.Controller = BytesToHexString(object.Controller.ToArrayReverse())
 		return obj
-	case *payload.TransferAsset:
-	case *payload.Record:
-	case *payload.DeployCode:
+	case *uti_payload.TransferAsset:
+	case *uti_payload.Record:
+	case *uti_payload.DeployCode:
 	case *payload.IssueToken:
 		obj := new(IssueTokenInfo)
 		proofBuf := new(bytes.Buffer)
@@ -184,7 +185,7 @@ func TransPayloadToHex(p Payload) PayloadInfo {
 	return nil
 }
 
-func VerifyAndSendTx(txn *tx.Transaction) ErrCode {
+func VerifyAndSendTx(txn *tx.NodeTransaction) ErrCode {
 	// if transaction is verified unsucessfully then will not put it into transaction pool
 	if errCode := NodeForServers.AppendToTxnPool(txn); errCode != Success {
 		log.Warn("Can NOT add the transaction to TxnPool")

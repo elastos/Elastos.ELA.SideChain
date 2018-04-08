@@ -3,8 +3,9 @@ package auxpow
 import (
 	"io"
 
-	. "github.com/elastos/Elastos.ELA.SideChain/common"
-	"github.com/elastos/Elastos.ELA.SideChain/common/serialization"
+	core_auxpow "github.com/elastos/Elastos.ELA.Core/core/auxpow"
+	. "github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.Utility/common/serialization"
 )
 
 type SideAuxPow struct {
@@ -94,13 +95,13 @@ func (sap *SideAuxPow) Deserialize(r io.Reader) error {
 	return nil
 }
 
-func (sap *SideAuxPow) SideAuxPowCheck(hashAuxBlock Uint256) bool {
+func (sap *SideAuxPow) Check(hashAuxBlock Uint256, chainId int) bool {
 	mainBlockHeader := sap.MainBlockHeader
-	if !mainBlockHeader.AuxPow.Check(mainBlockHeader.Hash(), AuxPowChainID) {
+	if !mainBlockHeader.AuxPow.Check(mainBlockHeader.Hash(), core_auxpow.AuxPowChainID) {
 		return false
 	}
 
-	sideAuxPowMerkleRoot := CheckMerkleBranch(sap.SideAuxBlockTx.Hash(), sap.SideAuxMerkleBranch, sap.SideAuxMerkleIndex)
+	sideAuxPowMerkleRoot := core_auxpow.CheckMerkleBranch(sap.SideAuxBlockTx.Hash(), sap.SideAuxMerkleBranch, sap.SideAuxMerkleIndex)
 	if sideAuxPowMerkleRoot != sap.MainBlockHeader.TransactionsRoot {
 		return false
 	}
@@ -116,4 +117,19 @@ func (sap *SideAuxPow) SideAuxPowCheck(hashAuxBlock Uint256) bool {
 	}
 
 	return true
+}
+
+func (sap *SideAuxPow) GetBlockHeader() *core_auxpow.BtcBlockHeader {
+	return &sap.MainBlockHeader.AuxPow.ParBlockHeader
+}
+
+type SideAuxPowFactoryImpl struct {
+}
+
+func (factory *SideAuxPowFactoryImpl) Create() core_auxpow.AuxPowBase {
+	return &SideAuxPow{}
+}
+
+func init() {
+	core_auxpow.AuxPowFactorySingleton = &SideAuxPowFactoryImpl{}
 }

@@ -9,19 +9,19 @@ import (
 	"github.com/elastos/Elastos.ELA.SPV/interface"
 	spvdb "github.com/elastos/Elastos.ELA.SPV/spvwallet/db"
 	"github.com/elastos/Elastos.ELA.SideChain/common/config"
-	tx "github.com/elastos/Elastos.ELA.SideChain/core/transaction"
+	tx "github.com/elastos/Elastos.ELA.Core/core/transaction"
 	"github.com/elastos/Elastos.ELA.SideChain/core/transaction/payload"
 )
 
 var spvService *_interface.SPVServiceImpl
 
 func SpvInit() error {
-	spvService := _interface.NewSPVService(uint64(rand.Int63()), config.Parameters.SpvSeedList)
+	spvService := _interface.NewSPVService(uint64(rand.Int63()), config.SideParameters.SpvSeedList)
 	spvService.Start()
 	return nil
 }
 
-func VerifyTransaction(txn *tx.Transaction) error {
+func VerifyTransaction(txn *tx.NodeTransaction) error {
 	proof := new(spvdb.Proof)
 
 	switch object := txn.Payload.(type) {
