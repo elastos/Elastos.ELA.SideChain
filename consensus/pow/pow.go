@@ -9,16 +9,17 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/elastos/Elastos.ELA.SideChain/common"
-	"github.com/elastos/Elastos.ELA.SideChain/common/config"
-	"github.com/elastos/Elastos.ELA.SideChain/common/log"
+	"github.com/elastos/Elastos.ELA.Core/common/config"
+	"github.com/elastos/Elastos.ELA.Core/common/log"
+	"github.com/elastos/Elastos.ELA.Core/core/ledger"
+	core_tx "github.com/elastos/Elastos.ELA.Core/core/transaction"
+	"github.com/elastos/Elastos.ELA.Core/events"
+	"github.com/elastos/Elastos.ELA.Core/net/protocol"
 	"github.com/elastos/Elastos.ELA.SideChain/core/auxpow"
-	"github.com/elastos/Elastos.ELA.SideChain/core/ledger"
-	tx "github.com/elastos/Elastos.ELA.SideChain/core/transaction"
-	"github.com/elastos/Elastos.ELA.SideChain/core/transaction/payload"
-	"github.com/elastos/Elastos.ELA.SideChain/crypto"
-	"github.com/elastos/Elastos.ELA.SideChain/events"
-	"github.com/elastos/Elastos.ELA.SideChain/net/protocol"
+	. "github.com/elastos/Elastos.ELA.Utility/common"
+	uti_tx "github.com/elastos/Elastos.ELA.Utility/core/transaction"
+	"github.com/elastos/Elastos.ELA.Utility/core/transaction/payload"
+	"github.com/elastos/Elastos.ELA.Utility/crypto"
 	//	"ELA/net"
 )
 
@@ -77,7 +78,7 @@ func (pow *PowService) CollectTransactions(MsgBlock *ledger.Block) int {
 	return txs
 }
 
-func (pow *PowService) CreateCoinbaseTrx(nextBlockHeight uint32, addr string) (*tx.Transaction, error) {
+func (pow *PowService) CreateCoinbaseTrx(nextBlockHeight uint32, addr string) (*core_tx.NodeTransaction, error) {
 	minerProgramHash, err := Uint168FromAddress(addr)
 	if err != nil {
 		return nil, err
@@ -91,33 +92,33 @@ func (pow *PowService) CreateCoinbaseTrx(nextBlockHeight uint32, addr string) (*
 		CoinbaseData: []byte(config.Parameters.PowConfiguration.MinerInfo),
 	}
 
-	txn, err := tx.NewCoinBaseTransaction(pd, ledger.DefaultLedger.Blockchain.GetBestHeight()+1)
+	txn, err := core_tx.NewCoinBaseTransaction(pd, ledger.DefaultLedger.Blockchain.GetBestHeight()+1)
 	if err != nil {
 		return nil, err
 	}
-	txn.UTXOInputs = []*tx.UTXOTxInput{
+	txn.UTXOInputs = []*uti_tx.UTXOTxInput{
 		{
 			ReferTxID:          Uint256{},
 			ReferTxOutputIndex: math.MaxUint16,
 			Sequence:           math.MaxUint32,
 		},
 	}
-	txn.Outputs = []*tx.TxOutput{
+	txn.Outputs = []*uti_tx.TxOutput{
 		{
 			AssetID:     ledger.DefaultLedger.Blockchain.AssetID,
 			Value:       0,
-			ProgramHash: foundationProgramHash,
+			ProgramHash: *foundationProgramHash,
 		},
 		{
 			AssetID:     ledger.DefaultLedger.Blockchain.AssetID,
 			Value:       0,
-			ProgramHash: minerProgramHash,
+			ProgramHash: *minerProgramHash,
 		},
 	}
 
 	nonce := make([]byte, 8)
 	binary.BigEndian.PutUint64(nonce, rand.Uint64())
-	txAttr := tx.NewTxAttribute(tx.Nonce, nonce)
+	txAttr := uti_tx.NewTxAttribute(uti_tx.Nonce, nonce)
 	txn.Attributes = append(txn.Attributes, &txAttr)
 	// log.Trace("txAttr", txAttr)
 
@@ -138,7 +139,7 @@ func calcBlockSubsidy(currentHeight uint32) int64 {
 	return subsidyPerBlock
 }
 
-type txSorter []*tx.Transaction
+type txSorter []*core_tx.NodeTransaction
 
 func (s txSorter) Len() int {
 	return len(s)
@@ -167,12 +168,12 @@ func (pow *PowService) GenerateBlock(addr string) (*ledger.Block, error) {
 		Bits:             config.Parameters.ChainParam.PowLimitBits,
 		Height:           nextBlockHeight,
 		Nonce:            0,
-		SideAuxPow:       auxpow.SideAuxPow{},
+		AuxPow:           &auxpow.SideAuxPow{},
 	}
 
 	msgBlock := &ledger.Block{
 		Blockdata:    blockData,
-		Transactions: []*tx.Transaction{},
+		Transactions: []*core_tx.NodeTransaction{},
 	}
 
 	msgBlock.Transactions = append(msgBlock.Transactions, coinBaseTx)
@@ -180,7 +181,7 @@ func (pow *PowService) GenerateBlock(addr string) (*ledger.Block, error) {
 	calcTxsAmount := 1
 	totalFee := int64(0)
 	var txPool txSorter
-	txPool = make([]*tx.Transaction, 0)
+	txPool = make([]*core_tx.NodeTransaction, 0)
 	transactionsPool := pow.localNet.GetTxnPool(false)
 	for _, v := range transactionsPool {
 		txPool = append(txPool, v)
@@ -306,7 +307,7 @@ func (pow *PowService) SolveBlock(MsgBlock *ledger.Block, ticker *time.Ticker) b
 		sideAuxPow.MainBlockHeader.AuxPow.ParBlockHeader.Nonce = i
 		hash := sideAuxPow.MainBlockHeader.AuxPow.ParBlockHeader.Hash() // solve parBlockHeader hash
 		if ledger.HashToBig(&hash).Cmp(targetDifficulty) <= 0 {
-			MsgBlock.Blockdata.SideAuxPow = *sideAuxPow
+			MsgBlock.Blockdata.AuxPow = sideAuxPow
 			return true
 		}
 	}

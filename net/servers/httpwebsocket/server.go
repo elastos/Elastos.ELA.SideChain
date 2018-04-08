@@ -11,14 +11,14 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/elastos/Elastos.ELA.SideChain/common"
-	. "github.com/elastos/Elastos.ELA.SideChain/common/config"
-	"github.com/elastos/Elastos.ELA.SideChain/common/log"
-	"github.com/elastos/Elastos.ELA.SideChain/core/ledger"
-	"github.com/elastos/Elastos.ELA.SideChain/core/transaction"
-	. "github.com/elastos/Elastos.ELA.SideChain/errors"
-	"github.com/elastos/Elastos.ELA.SideChain/events"
+	. "github.com/elastos/Elastos.ELA.Core/common/config"
+	"github.com/elastos/Elastos.ELA.Core/common/log"
+	"github.com/elastos/Elastos.ELA.Core/core/ledger"
+	"github.com/elastos/Elastos.ELA.Core/core/transaction"
+	"github.com/elastos/Elastos.ELA.Core/events"
 	. "github.com/elastos/Elastos.ELA.SideChain/net/servers"
+	. "github.com/elastos/Elastos.ELA.Utility/common"
+	. "github.com/elastos/Elastos.ELA.Utility/errors"
 
 	"github.com/gorilla/websocket"
 	"github.com/pborman/uuid"
@@ -276,10 +276,10 @@ func (server *WebSocketServer) PushResult(action string, v interface{}) {
 		}
 	case "sendblocktransactions":
 		if block, ok := v.(*ledger.Block); ok {
-			result = GetBlockTransactions(block, func(*transaction.Transaction) bool { return false })
+			result = GetBlockTransactions(block, func(nodeTransaction *transaction.NodeTransaction) bool { return false })
 		}
 	case "sendnewtransaction":
-		if trx, ok := v.(*transaction.Transaction); ok {
+		if trx, ok := v.(*transaction.NodeTransaction); ok {
 			result = TransArrayByteToHexString(trx)
 		}
 	default:

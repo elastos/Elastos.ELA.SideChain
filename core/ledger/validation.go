@@ -1,17 +1,18 @@
-package validation
+package ledger
 
 import (
 	"errors"
 
-	. "github.com/elastos/Elastos.ELA.SideChain/core/signature"
-	. "github.com/elastos/Elastos.ELA.SideChain/core/transaction"
-	"github.com/elastos/Elastos.ELA.SideChain/crypto"
+	. "github.com/elastos/Elastos.ELA.Utility/core/signature"
+	. "github.com/elastos/Elastos.ELA.Core/core/transaction"
+	"github.com/elastos/Elastos.ELA.Utility/crypto"
 	"github.com/elastos/Elastos.ELA.SideChain/spv"
+	"github.com/elastos/Elastos.ELA.SideChain/core/transaction"
 )
 
-func VerifySignature(txn *Transaction) (bool, error) {
+func VerifySignature(txn *NodeTransaction) (bool, error) {
 
-	if txn.IsIssueTokenTx() {
+	if txn.TxType == transaction.IssueToken {
 		if err := spv.VerifyTransaction(txn); err != nil {
 			return false, errors.New("Issue token transaction validate failed.")
 		}
@@ -42,7 +43,7 @@ func VerifySignature(txn *Transaction) (bool, error) {
 			return false, err
 		}
 
-		if hashes[i] != programHash {
+		if hashes[i] != *programHash {
 			return false, errors.New("The data hashes is different with corresponding program code.")
 		}
 		// Get transaction type

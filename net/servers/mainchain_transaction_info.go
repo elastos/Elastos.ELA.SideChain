@@ -5,11 +5,14 @@ import (
 	"errors"
 	"io"
 
-	. "github.com/elastos/Elastos.ELA.SideChain/common"
-	"github.com/elastos/Elastos.ELA.SideChain/common/serialization"
-	"github.com/elastos/Elastos.ELA.SideChain/core/contract/program"
-	. "github.com/elastos/Elastos.ELA.SideChain/core/transaction"
-	"github.com/elastos/Elastos.ELA.SideChain/core/transaction/payload"
+	tx "github.com/elastos/Elastos.ELA.Core/core/transaction"
+	side_tx "github.com/elastos/Elastos.ELA.SideChain/core/transaction"
+	side_payload "github.com/elastos/Elastos.ELA.SideChain/core/transaction/payload"
+	. "github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.Utility/common/serialization"
+	"github.com/elastos/Elastos.ELA.Utility/core/contract/program"
+	. "github.com/elastos/Elastos.ELA.Utility/core/transaction"
+	"github.com/elastos/Elastos.ELA.Utility/core/transaction/payload"
 )
 
 func (i *CoinbaseInfo) Data(version byte) string {
@@ -488,9 +491,9 @@ func (t *Transactions) Deserialize(r io.Reader) error {
 		t.Payload = new(RegisterAssetInfo)
 	case TransferAsset:
 		t.Payload = new(TransferAssetInfo)
-	case IssueToken:
+	case side_tx.IssueToken:
 		t.Payload = new(IssueTokenInfo)
-	case TransferCrossChainAsset:
+	case side_tx.TransferCrossChainAsset:
 		t.Payload = new(TransferCrossChainAssetInfo)
 	default:
 		return errors.New("Invalid transaction type.")
@@ -627,11 +630,11 @@ func (t *Transactions) Deserialize(r io.Reader) error {
 	return nil
 }
 
-func (trans *Transactions) ConvertFrom(txn *Transaction) error {
+func (trans *Transactions) ConvertFrom(txn *tx.NodeTransaction) error {
 	return nil
 }
 
-func (trans *Transactions) ConvertTo() (*Transaction, error) {
+func (trans *Transactions) ConvertTo() (*tx.NodeTransaction, error) {
 	return nil, nil
 }
 
@@ -650,12 +653,12 @@ func PayloadInfoToTransPayload(p PayloadInfo) (Payload, error) {
 			return nil, err
 		}
 		controller, err := Uint168FromBytes(bytes)
-		obj.Controller = controller
+		obj.Controller = *controller
 		return obj, nil
 	case *TransferAssetInfo:
 		return new(payload.TransferAsset), nil
 	case *IssueTokenInfo:
-		obj := new(payload.IssueToken)
+		obj := new(side_payload.IssueToken)
 		proofBytes, err := HexStringToBytes(object.Proof)
 		if err != nil {
 			return nil, err
@@ -666,7 +669,7 @@ func PayloadInfoToTransPayload(p PayloadInfo) (Payload, error) {
 		}
 		return obj, nil
 	case *TransferCrossChainAssetInfo:
-		obj := new(payload.TransferCrossChainAsset)
+		obj := new(side_payload.TransferCrossChainAsset)
 		obj.AddressesMap = object.AddressesMap
 		return obj, nil
 	}
@@ -674,7 +677,7 @@ func PayloadInfoToTransPayload(p PayloadInfo) (Payload, error) {
 	return nil, errors.New("Invalid payload type.")
 }
 
-func (txinfo *Transactions) ToTransaction() (*Transaction, error) {
+func (txinfo *Transactions) ToTransaction() (*tx.NodeTransaction, error) {
 
 	txPaload, err := PayloadInfoToTransPayload(txinfo.Payload)
 	if err != nil {
@@ -735,7 +738,7 @@ func (txinfo *Transactions) ToTransaction() (*Transaction, error) {
 			AssetID:     assetId,
 			Value:       *value,
 			OutputLock:  output.OutputLock,
-			ProgramHash: programHash,
+			ProgramHash: *programHash,
 		}
 		txOutputs = append(txOutputs, output)
 	}
@@ -757,14 +760,16 @@ func (txinfo *Transactions) ToTransaction() (*Transaction, error) {
 		txPrograms = append(txPrograms, txProgram)
 	}
 
-	txTransaction := &Transaction{
-		TxType:         txinfo.TxType,
-		PayloadVersion: txinfo.PayloadVersion,
-		Payload:        txPaload,
-		Attributes:     txAttribute,
-		UTXOInputs:     txUTXOTxInput,
-		Outputs:        txOutputs,
-		Programs:       txPrograms,
+	txTransaction := &tx.NodeTransaction{
+		Transaction: Transaction{
+			TxType:         txinfo.TxType,
+			PayloadVersion: txinfo.PayloadVersion,
+			Payload:        txPaload,
+			Attributes:     txAttribute,
+			UTXOInputs:     txUTXOTxInput,
+			Outputs:        txOutputs,
+			Programs:       txPrograms,
+		},
 	}
 
 	return txTransaction, nil

@@ -6,10 +6,10 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/elastos/Elastos.ELA.SideChain/common"
-	"github.com/elastos/Elastos.ELA.SideChain/common/serialization"
-	"github.com/elastos/Elastos.ELA.SideChain/core/store/ChainStore"
-	"github.com/elastos/Elastos.ELA.SideChain/core/store/LevelDBStore"
+	"github.com/elastos/Elastos.ELA.Core/core/store/ChainStore"
+	"github.com/elastos/Elastos.ELA.Core/core/store/LevelDBStore"
+	"github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.Utility/common/serialization"
 )
 
 func main() {

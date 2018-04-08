@@ -6,13 +6,15 @@ import (
 	"strconv"
 	"time"
 
-	. "github.com/elastos/Elastos.ELA.SideChain/common"
-	"github.com/elastos/Elastos.ELA.SideChain/common/config"
-	"github.com/elastos/Elastos.ELA.SideChain/common/log"
-	"github.com/elastos/Elastos.ELA.SideChain/core/ledger"
-	tx "github.com/elastos/Elastos.ELA.SideChain/core/transaction"
-	"github.com/elastos/Elastos.ELA.SideChain/core/transaction/payload"
-	. "github.com/elastos/Elastos.ELA.SideChain/errors"
+	"github.com/elastos/Elastos.ELA.Core/common/config"
+	"github.com/elastos/Elastos.ELA.Core/common/log"
+	"github.com/elastos/Elastos.ELA.Core/core/ledger"
+	tx "github.com/elastos/Elastos.ELA.Core/core/transaction"
+	side_config "github.com/elastos/Elastos.ELA.SideChain/common/config"
+	"github.com/elastos/Elastos.ELA.SideChain/core/auxpow"
+	. "github.com/elastos/Elastos.ELA.Utility/common"
+	uti_payload "github.com/elastos/Elastos.ELA.Utility/core/transaction/payload"
+	. "github.com/elastos/Elastos.ELA.Utility/errors"
 )
 
 const (
@@ -23,7 +25,7 @@ var PreChainHeight uint64
 var PreTime int64
 var PreTransactionCount int
 
-func TransArrayByteToHexString(ptx *tx.Transaction) *Transactions {
+func TransArrayByteToHexString(ptx *tx.NodeTransaction) *Transactions {
 
 	trans := new(Transactions)
 	trans.TxType = ptx.TxType
@@ -234,8 +236,8 @@ func SubmitAuxBlock(param map[string]interface{}) map[string]interface{} {
 	auxPow := param["sideauxpow"].(string)
 	temp, _ := HexStringToBytes(auxPow)
 	r := bytes.NewBuffer(temp)
-  
-	Pow.MsgBlock.BlockData[blockHash].Blockdata.SideAuxPow.Deserialize(r)
+
+	Pow.MsgBlock.BlockData[blockHash].Blockdata.AuxPow.Deserialize(r)
 	_, _, err := ledger.DefaultLedger.Blockchain.AddBlock(Pow.MsgBlock.BlockData[blockHash])
 	if err != nil {
 		log.Trace(err)
@@ -452,13 +454,14 @@ func GetTransactionPool(param map[string]interface{}) map[string]interface{} {
 
 func GetBlockInfo(block *ledger.Block) BlockInfo {
 	hash := block.Hash()
+	sideAuxPow := block.Blockdata.AuxPow.(*auxpow.SideAuxPow)
 	auxInfo := &AuxInfo{
-		Version:    block.Blockdata.SideAuxPow.MainBlockHeader.AuxPow.ParBlockHeader.Version,
+		Version:    sideAuxPow.MainBlockHeader.AuxPow.ParBlockHeader.Version,
 		PrevBlock:  BytesToHexString(new(Uint256).ToArrayReverse()),
-		MerkleRoot: BytesToHexString(block.Blockdata.SideAuxPow.MainBlockHeader.AuxPow.ParBlockHeader.MerkleRoot.ToArrayReverse()),
-		Timestamp:  block.Blockdata.SideAuxPow.MainBlockHeader.AuxPow.ParBlockHeader.Timestamp,
+		MerkleRoot: BytesToHexString(sideAuxPow.MainBlockHeader.AuxPow.ParBlockHeader.MerkleRoot.ToArrayReverse()),
+		Timestamp:  sideAuxPow.MainBlockHeader.AuxPow.ParBlockHeader.Timestamp,
 		Bits:       0,
-		Nonce:      block.Blockdata.SideAuxPow.MainBlockHeader.AuxPow.ParBlockHeader.Nonce,
+		Nonce:      sideAuxPow.MainBlockHeader.AuxPow.ParBlockHeader.Nonce,
 	}
 	blockHead := &BlockHead{
 		Version:          block.Blockdata.Version,
@@ -486,7 +489,7 @@ func GetBlockInfo(block *ledger.Block) BlockInfo {
 
 	}
 
-	coinbasePd := block.Transactions[0].Payload.(*payload.CoinBase)
+	coinbasePd := block.Transactions[0].Payload.(*uti_payload.CoinBase)
 	b := BlockInfo{
 		Hash:          BytesToHexString(hash.ToArrayReverse()),
 		BlockData:     blockHead,
@@ -564,7 +567,7 @@ func SendRawTransaction(param map[string]interface{}) map[string]interface{} {
 	if err != nil {
 		return ResponsePack(InvalidParams, "")
 	}
-	var txn tx.Transaction
+	var txn tx.NodeTransaction
 	if err := txn.Deserialize(bytes.NewReader(bys)); err != nil {
 		return ResponsePack(InvalidTransaction, "")
 	}
@@ -598,7 +601,7 @@ func GetBlockHash(param map[string]interface{}) map[string]interface{} {
 	return ResponsePack(Success, BytesToHexString(hash.ToArrayReverse()))
 }
 
-func GetBlockTransactionsDetail(block *ledger.Block, filter func(*tx.Transaction) bool) interface{} {
+func GetBlockTransactionsDetail(block *ledger.Block, filter func(transaction *tx.NodeTransaction) bool) interface{} {
 	var trans []*Transactions
 	for i := 0; i < len(block.Transactions); i++ {
 		if filter(block.Transactions[i]) {
@@ -621,7 +624,7 @@ func GetBlockTransactionsDetail(block *ledger.Block, filter func(*tx.Transaction
 	return b
 }
 
-func GetBlockTransactions(block *ledger.Block, filter func(*tx.Transaction) bool) interface{} {
+func GetBlockTransactions(block *ledger.Block, filter func(*tx.NodeTransaction) bool) interface{} {
 	trans := make([]string, len(block.Transactions))
 	for i := 0; i < len(block.Transactions); i++ {
 		if filter(block.Transactions[i]) {
@@ -663,7 +666,7 @@ func GetTransactionsByHeight(param map[string]interface{}) map[string]interface{
 	if err != nil {
 		return ResponsePack(UnknownBlock, "")
 	}
-	return ResponsePack(Success, GetBlockTransactions(block, func(*tx.Transaction) bool { return false }))
+	return ResponsePack(Success, GetBlockTransactions(block, func(*tx.NodeTransaction) bool { return false }))
 }
 
 func GetDestroyedTransactionsByHeight(param map[string]interface{}) map[string]interface{} {
@@ -686,10 +689,10 @@ func GetDestroyedTransactionsByHeight(param map[string]interface{}) map[string]i
 		return ResponsePack(UnknownBlock, "")
 	}
 
-	destroyHash, err := Uint168FromAddress(config.Parameters.DestroyAddr)
-	return ResponsePack(Success, GetBlockTransactionsDetail(block, func(tran *tx.Transaction) bool {
+	destroyHash, err := Uint168FromAddress(side_config.SideParameters.DestroyAddr)
+	return ResponsePack(Success, GetBlockTransactionsDetail(block, func(tran *tx.NodeTransaction) bool {
 		for _, output := range tran.Outputs {
-			if output.ProgramHash == destroyHash {
+			if output.ProgramHash == *destroyHash {
 				return false
 			}
 		}
@@ -748,12 +751,11 @@ func GetBalanceByAddr(param map[string]interface{}) map[string]interface{} {
 		return ResponsePack(InvalidParams, "")
 	}
 
-	var programHash Uint168
 	programHash, err := Uint168FromAddress(param["addr"].(string))
 	if err != nil {
 		return ResponsePack(InvalidParams, "")
 	}
-	unspends, err := ledger.DefaultLedger.Store.GetUnspentsFromProgramHash(programHash)
+	unspends, err := ledger.DefaultLedger.Store.GetUnspentsFromProgramHash(*programHash)
 	var balance Fixed64 = 0
 	for _, u := range unspends {
 		for _, v := range u {
@@ -773,7 +775,7 @@ func GetBalanceByAsset(param map[string]interface{}) map[string]interface{} {
 		return ResponsePack(InvalidParams, "")
 	}
 
-	unspends, err := ledger.DefaultLedger.Store.GetUnspentsFromProgramHash(programHash)
+	unspends, err := ledger.DefaultLedger.Store.GetUnspentsFromProgramHash(*programHash)
 	var balance Fixed64 = 0
 	for k, u := range unspends {
 		assid := BytesToHexString(k.ToArrayReverse())
@@ -790,7 +792,6 @@ func GetUnspends(param map[string]interface{}) map[string]interface{} {
 	if !checkParam(param, "addr") {
 		return ResponsePack(InvalidParams, "")
 	}
-	var programHash Uint168
 
 	programHash, err := Uint168FromAddress(param["addr"].(string))
 	if err != nil {
@@ -807,7 +808,7 @@ func GetUnspends(param map[string]interface{}) map[string]interface{} {
 		Utxo      []UTXOUnspentInfo
 	}
 	var results []Result
-	unspends, err := ledger.DefaultLedger.Store.GetUnspentsFromProgramHash(programHash)
+	unspends, err := ledger.DefaultLedger.Store.GetUnspentsFromProgramHash(*programHash)
 
 	for k, u := range unspends {
 		assetid := BytesToHexString(k.ToArrayReverse())
@@ -848,7 +849,7 @@ func GetUnspendOutput(param map[string]interface{}) map[string]interface{} {
 		Index uint32
 		Value string
 	}
-	infos, err := ledger.DefaultLedger.Store.GetUnspentFromProgramHash(programHash, assetHash)
+	infos, err := ledger.DefaultLedger.Store.GetUnspentFromProgramHash(*programHash, assetHash)
 	if err != nil {
 		return ResponsePack(InvalidParams, "")
 

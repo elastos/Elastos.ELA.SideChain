@@ -6,8 +6,9 @@ import (
 	"errors"
 	"io"
 
-	. "github.com/elastos/Elastos.ELA.SideChain/common"
-	"github.com/elastos/Elastos.ELA.SideChain/common/serialization"
+	. "github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.Utility/common/serialization"
+	core_auxpow "github.com/elastos/Elastos.ELA.Core/core/auxpow"
 )
 
 type ElaBlockHeader struct {
@@ -18,7 +19,7 @@ type ElaBlockHeader struct {
 	Bits             uint32
 	Nonce            uint32
 	Height           uint32
-	AuxPow           AuxPow
+	AuxPow           core_auxpow.AuxPow
 }
 
 //Serialize the blockheader
