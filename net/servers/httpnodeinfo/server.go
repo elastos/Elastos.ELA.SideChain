@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/elastos/Elastos.ELA.Core/common/config"
-	"github.com/elastos/Elastos.ELA.Core/core/ledger"
 	"github.com/elastos/Elastos.ELA.SideChain/net/servers"
+	"github.com/elastos/Elastos.ELA/common/config"
+	"github.com/elastos/Elastos.ELA/core/ledger"
 )
 
 type Info struct {

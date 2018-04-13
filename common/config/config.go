@@ -7,15 +7,15 @@ import (
 	"log"
 	"os"
 
-	. "github.com/elastos/Elastos.ELA.Core/common/config"
+	. "github.com/elastos/Elastos.ELA/common/config"
 )
 
 var SideParameters sideConfigParams
 
 type SideConfiguration struct {
 	Configuration
-	SpvSeedList         []string         `json:"SpvSeedList"`
-	DestroyAddr         string           `json:"DestroyAddr"`
+	SpvSeedList []string `json:"SpvSeedList"`
+	DestroyAddr string   `json:"DestroyAddr"`
 }
 
 type SideConfigFile struct {
@@ -27,7 +27,7 @@ type sideConfigParams struct {
 	ChainParam *ChainParams
 }
 
-func init() {
+func InitSideConfig() {
 	file, e := ioutil.ReadFile(DefaultConfigFilename)
 	if e != nil {
 		log.Fatalf("File error: %v\n", e)

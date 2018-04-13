@@ -3,8 +3,8 @@ package transaction
 import (
 	"errors"
 
-	. "github.com/elastos/Elastos.ELA.Utility/core/transaction"
 	"github.com/elastos/Elastos.ELA.SideChain/core/transaction/payload"
+	. "github.com/elastos/Elastos.ELA.Utility/core/transaction"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type PayloadFactorySideNodeImpl struct {
-	innerFactory *PayloadFactoryImpl
+	InnerFactory *PayloadFactoryImpl
 }
 
 func (factor *PayloadFactorySideNodeImpl) Name(txType TransactionType) string {
-	if name := factor.innerFactory.Name(txType); name != "Unknown" {
+	if name := factor.InnerFactory.Name(txType); name != "Unknown" {
 		return name
 	}
 
@@ -32,7 +32,7 @@ func (factor *PayloadFactorySideNodeImpl) Name(txType TransactionType) string {
 }
 
 func (factor *PayloadFactorySideNodeImpl) Create(txType TransactionType) (Payload, error) {
-	if p, _ := factor.innerFactory.Create(txType); p != nil {
+	if p, _ := factor.InnerFactory.Create(txType); p != nil {
 		return p, nil
 	}
 
@@ -47,5 +47,5 @@ func (factor *PayloadFactorySideNodeImpl) Create(txType TransactionType) (Payloa
 }
 
 func init() {
-	PayloadFactorySingleton = &PayloadFactorySideNodeImpl{innerFactory: &PayloadFactoryImpl{}}
+
 }

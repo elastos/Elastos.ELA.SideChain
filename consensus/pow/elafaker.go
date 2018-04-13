@@ -3,10 +3,10 @@ package pow
 import (
 	"time"
 
-	"github.com/elastos/Elastos.ELA.Core/consensus/pow"
-	core_auxpow "github.com/elastos/Elastos.ELA.Core/core/auxpow"
 	"github.com/elastos/Elastos.ELA.SideChain/core/auxpow"
 	. "github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA/consensus/pow"
+	core_auxpow "github.com/elastos/Elastos.ELA/core/auxpow"
 )
 
 func getSideMiningTx(msgBlockHash Uint256, genesisHash Uint256) *auxpow.ElaTx {
