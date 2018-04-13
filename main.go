@@ -5,24 +5,27 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.Core/common/config"
-	"github.com/elastos/Elastos.ELA.Core/common/log"
-	"github.com/elastos/Elastos.ELA.Core/core/ledger"
-	"github.com/elastos/Elastos.ELA.Core/core/store/ChainStore"
-	"github.com/elastos/Elastos.ELA.Core/core/transaction"
-	"github.com/elastos/Elastos.ELA.Core/net/node"
-	"github.com/elastos/Elastos.ELA.Core/net/protocol"
-	_ "github.com/elastos/Elastos.ELA.SideChain/common/config"
+	. "github.com/elastos/Elastos.ELA.SideChain/common/config"
 	"github.com/elastos/Elastos.ELA.SideChain/consensus/pow"
-	_ "github.com/elastos/Elastos.ELA.SideChain/core/auxpow"
-	_ "github.com/elastos/Elastos.ELA.SideChain/core/ledger"
-	_ "github.com/elastos/Elastos.ELA.SideChain/core/transaction"
+	. "github.com/elastos/Elastos.ELA.SideChain/core/auxpow"
+	. "github.com/elastos/Elastos.ELA.SideChain/core/ledger"
+	. "github.com/elastos/Elastos.ELA.SideChain/core/transaction"
 	"github.com/elastos/Elastos.ELA.SideChain/net/servers"
 	"github.com/elastos/Elastos.ELA.SideChain/net/servers/httpjsonrpc"
 	"github.com/elastos/Elastos.ELA.SideChain/net/servers/httpnodeinfo"
 	"github.com/elastos/Elastos.ELA.SideChain/net/servers/httprestful"
 	"github.com/elastos/Elastos.ELA.SideChain/net/servers/httpwebsocket"
 	"github.com/elastos/Elastos.ELA.SideChain/spv"
+	uti_tx "github.com/elastos/Elastos.ELA.Utility/core/transaction"
+	"github.com/elastos/Elastos.ELA/common/config"
+	"github.com/elastos/Elastos.ELA/common/log"
+	core_auxpow "github.com/elastos/Elastos.ELA/core/auxpow"
+	"github.com/elastos/Elastos.ELA/core/ledger"
+	core_ledger "github.com/elastos/Elastos.ELA/core/ledger"
+	"github.com/elastos/Elastos.ELA/core/store/ChainStore"
+	core_tx "github.com/elastos/Elastos.ELA/core/transaction"
+	"github.com/elastos/Elastos.ELA/net/node"
+	"github.com/elastos/Elastos.ELA/net/protocol"
 )
 
 const (
@@ -30,6 +33,13 @@ const (
 )
 
 func init() {
+	InitSideConfig()
+
+	core_auxpow.AuxPowFactorySingleton = &SideAuxPowFactoryImpl{}
+	core_ledger.Validator = &SideTransactionValidatorImpl{
+		core_ledger.TransactionValidatorImpl{}}
+	uti_tx.PayloadFactorySingleton = &PayloadFactorySideNodeImpl{&uti_tx.PayloadFactoryImpl{}}
+
 	log.Init(log.Path, log.Stdout)
 	var coreNum int
 	if config.Parameters.MultiCoreNum > DefaultMultiCoreNum {
@@ -82,7 +92,7 @@ func main() {
 	defer ledger.DefaultLedger.Store.Close()
 
 	ledger.DefaultLedger.Store.InitLedgerStore(ledger.DefaultLedger)
-	transaction.TxStore = ledger.DefaultLedger.Store
+	core_tx.TxStore = ledger.DefaultLedger.Store
 	_, err = ledger.NewBlockchainWithGenesisBlock()
 	if err != nil {
 		log.Fatal(err, "BlockChain generate failed")

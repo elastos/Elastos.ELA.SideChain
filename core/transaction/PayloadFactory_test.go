@@ -3,9 +3,9 @@ package transaction
 import (
 	"testing"
 
+	p "github.com/elastos/Elastos.ELA.SideChain/core/transaction/payload"
 	uti_tx "github.com/elastos/Elastos.ELA.Utility/core/transaction"
 	uti_payload "github.com/elastos/Elastos.ELA.Utility/core/transaction/payload"
-	p "github.com/elastos/Elastos.ELA.SideChain/core/transaction/payload"
 )
 
 func TestPayloadFactoryNodeImpl_Name(t *testing.T) {
@@ -38,7 +38,6 @@ func TestPayloadFactoryNodeImpl_Name(t *testing.T) {
 	if name != "IssueToken" {
 		t.Errorf("TransactionTypeName: [%v], actually: [%v]", "IssueToken", name)
 	}
-
 
 	name = uti_tx.PayloadFactorySingleton.Name(TransferCrossChainAsset)
 	if name != "TransferCrossChainAsset" {
@@ -115,4 +114,8 @@ func TestPayloadFactoryNodeImpl_Create(t *testing.T) {
 	if err == nil {
 		t.Error("Expect an error.")
 	}
+}
+
+func init() {
+	uti_tx.PayloadFactorySingleton = &PayloadFactorySideNodeImpl{&uti_tx.PayloadFactoryImpl{}}
 }

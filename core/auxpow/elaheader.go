@@ -8,7 +8,7 @@ import (
 
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/common/serialization"
-	core_auxpow "github.com/elastos/Elastos.ELA.Core/core/auxpow"
+	core_auxpow "github.com/elastos/Elastos.ELA/core/auxpow"
 )
 
 type ElaBlockHeader struct {

@@ -7,10 +7,10 @@ import (
 
 	spvtx "github.com/elastos/Elastos.ELA.SPV/core/transaction"
 	"github.com/elastos/Elastos.ELA.SPV/interface"
-	spvdb "github.com/elastos/Elastos.ELA.SPV/spvwallet/db"
+	spv "github.com/elastos/Elastos.ELA.SPV/interface"
 	"github.com/elastos/Elastos.ELA.SideChain/common/config"
-	tx "github.com/elastos/Elastos.ELA.Core/core/transaction"
 	"github.com/elastos/Elastos.ELA.SideChain/core/transaction/payload"
+	tx "github.com/elastos/Elastos.ELA/core/transaction"
 )
 
 var spvService *_interface.SPVServiceImpl
@@ -22,7 +22,7 @@ func SpvInit() error {
 }
 
 func VerifyTransaction(txn *tx.NodeTransaction) error {
-	proof := new(spvdb.Proof)
+	proof := new(spv.Proof)
 
 	switch object := txn.Payload.(type) {
 	case *payload.IssueToken:

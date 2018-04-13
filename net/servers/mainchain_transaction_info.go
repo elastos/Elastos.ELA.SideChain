@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 
-	tx "github.com/elastos/Elastos.ELA.Core/core/transaction"
 	side_tx "github.com/elastos/Elastos.ELA.SideChain/core/transaction"
 	side_payload "github.com/elastos/Elastos.ELA.SideChain/core/transaction/payload"
 	. "github.com/elastos/Elastos.ELA.Utility/common"
@@ -13,6 +12,7 @@ import (
 	"github.com/elastos/Elastos.ELA.Utility/core/contract/program"
 	. "github.com/elastos/Elastos.ELA.Utility/core/transaction"
 	"github.com/elastos/Elastos.ELA.Utility/core/transaction/payload"
+	tx "github.com/elastos/Elastos.ELA/core/transaction"
 )
 
 func (i *CoinbaseInfo) Data(version byte) string {

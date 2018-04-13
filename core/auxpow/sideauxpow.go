@@ -3,9 +3,9 @@ package auxpow
 import (
 	"io"
 
-	core_auxpow "github.com/elastos/Elastos.ELA.Core/core/auxpow"
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/common/serialization"
+	core_auxpow "github.com/elastos/Elastos.ELA/core/auxpow"
 )
 
 type SideAuxPow struct {
@@ -128,8 +128,4 @@ type SideAuxPowFactoryImpl struct {
 
 func (factory *SideAuxPowFactoryImpl) Create() core_auxpow.AuxPowBase {
 	return &SideAuxPow{}
-}
-
-func init() {
-	core_auxpow.AuxPowFactorySingleton = &SideAuxPowFactoryImpl{}
 }

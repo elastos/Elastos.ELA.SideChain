@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/elastos/Elastos.ELA.Core/common/log"
-	tx "github.com/elastos/Elastos.ELA.Core/core/transaction"
-	. "github.com/elastos/Elastos.ELA.Core/net/protocol"
 	"github.com/elastos/Elastos.ELA.SideChain/consensus/pow"
 	"github.com/elastos/Elastos.ELA.SideChain/core/transaction/payload"
 	. "github.com/elastos/Elastos.ELA.Utility/common"
@@ -14,6 +11,9 @@ import (
 	. "github.com/elastos/Elastos.ELA.Utility/core/transaction"
 	uti_payload "github.com/elastos/Elastos.ELA.Utility/core/transaction/payload"
 	. "github.com/elastos/Elastos.ELA.Utility/errors"
+	"github.com/elastos/Elastos.ELA/common/log"
+	tx "github.com/elastos/Elastos.ELA/core/transaction"
+	. "github.com/elastos/Elastos.ELA/net/protocol"
 )
 
 const TlsPort = 443

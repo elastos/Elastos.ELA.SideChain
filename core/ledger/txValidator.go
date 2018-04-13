@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"math"
 
-	tx "github.com/elastos/Elastos.ELA.Core/core/transaction"
 	side_tx "github.com/elastos/Elastos.ELA.SideChain/core/transaction"
-	core_ledger "github.com/elastos/Elastos.ELA.Core/core/ledger"
-	"github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.SideChain/core/transaction/payload"
+	"github.com/elastos/Elastos.ELA.Utility/common"
+	core_ledger "github.com/elastos/Elastos.ELA/core/ledger"
+	tx "github.com/elastos/Elastos.ELA/core/transaction"
 )
 
 type SideTransactionValidatorImpl struct {
@@ -118,9 +118,4 @@ func (txValiator *SideTransactionValidatorImpl) CheckTransactionPayload(Tx *tx.N
 
 func (txValiator *SideTransactionValidatorImpl) isIssueTokenTx(Tx *tx.NodeTransaction) bool {
 	return Tx.TxType == side_tx.IssueToken
-}
-
-func init() {
-	core_ledger.Validator = &SideTransactionValidatorImpl{
-		core_ledger.TransactionValidatorImpl{}}
 }

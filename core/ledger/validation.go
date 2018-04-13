@@ -3,11 +3,11 @@ package ledger
 import (
 	"errors"
 
-	. "github.com/elastos/Elastos.ELA.Utility/core/signature"
-	. "github.com/elastos/Elastos.ELA.Core/core/transaction"
-	"github.com/elastos/Elastos.ELA.Utility/crypto"
-	"github.com/elastos/Elastos.ELA.SideChain/spv"
 	"github.com/elastos/Elastos.ELA.SideChain/core/transaction"
+	"github.com/elastos/Elastos.ELA.SideChain/spv"
+	. "github.com/elastos/Elastos.ELA.Utility/core/signature"
+	"github.com/elastos/Elastos.ELA.Utility/crypto"
+	. "github.com/elastos/Elastos.ELA/core/transaction"
 )
 
 func VerifySignature(txn *NodeTransaction) (bool, error) {
