@@ -9,6 +9,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SPV/interface"
 	spv "github.com/elastos/Elastos.ELA.SPV/interface"
 	"github.com/elastos/Elastos.ELA.SideChain/common/config"
+	"github.com/elastos/Elastos.ELA.SideChain/core/store/MainChainStore"
 	"github.com/elastos/Elastos.ELA.SideChain/core/transaction/payload"
 	tx "github.com/elastos/Elastos.ELA/core/transaction"
 )
@@ -43,8 +44,20 @@ func VerifyTransaction(txn *tx.NodeTransaction) error {
 	spvtxn := new(spvtx.Transaction)
 	spvtxn.Deserialize(txBuf)
 
+	ok, err := MainChainStore.DbCache.HashSideChainTx(spvtxn.Hash().String())
+	if err != nil {
+		return err
+	}
+	if ok {
+		return errors.New("Already accepted same transaction.")
+	}
+
 	if err := spvService.VerifyTransaction(*proof, *spvtxn); err != nil {
 		return errors.New("SPV module verify transaction failed.")
+	}
+
+	if err := MainChainStore.DbCache.AddSideChainTx(spvtxn.Hash().String()); err != nil {
+		return err
 	}
 
 	return nil

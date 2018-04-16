@@ -9,6 +9,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/consensus/pow"
 	. "github.com/elastos/Elastos.ELA.SideChain/core/auxpow"
 	. "github.com/elastos/Elastos.ELA.SideChain/core/ledger"
+	"github.com/elastos/Elastos.ELA.SideChain/core/store/MainChainStore"
 	. "github.com/elastos/Elastos.ELA.SideChain/core/transaction"
 	"github.com/elastos/Elastos.ELA.SideChain/net/servers"
 	"github.com/elastos/Elastos.ELA.SideChain/net/servers/httpjsonrpc"
@@ -93,6 +94,14 @@ func main() {
 
 	ledger.DefaultLedger.Store.InitLedgerStore(ledger.DefaultLedger)
 	core_tx.TxStore = ledger.DefaultLedger.Store
+
+	mainChainCache, err := MainChainStore.OpenDataStore()
+	if err != nil {
+		log.Fatal("open MainChainCache err:", err)
+		os.Exit(1)
+	}
+	MainChainStore.DbCache = mainChainCache
+
 	_, err = ledger.NewBlockchainWithGenesisBlock()
 	if err != nil {
 		log.Fatal(err, "BlockChain generate failed")
