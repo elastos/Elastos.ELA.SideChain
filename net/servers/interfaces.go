@@ -532,7 +532,7 @@ func GetBlockByHash(param map[string]interface{}) map[string]interface{} {
 	return ResponsePack(error, result)
 }
 
-func SendRawTransactionInfo(param map[string]interface{}) map[string]interface{} {
+func SendTransactionInfo(param map[string]interface{}) map[string]interface{} {
 	if !checkParam(param, "Info") {
 		return ResponsePack(InvalidParams, "")
 	}
