@@ -16,12 +16,13 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 	ela "github.com/elastos/Elastos.ELA/core"
 )
 
 const (
-	AUXBLOCK_GENERATED_INTERVAL_SECONDS = 60
+	AUXBLOCK_GENERATED_INTERVAL_SECONDS = 5
 )
 
 var NodeForServers Noder
