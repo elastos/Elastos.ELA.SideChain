@@ -5,11 +5,11 @@ import (
 	"errors"
 	"sort"
 
+	"github.com/elastos/Elastos.ELA.SideChain/mainchain"
 	"github.com/elastos/Elastos.ELA.SideChain/spv"
-
-	ela "github.com/elastos/Elastos.ELA/core"
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
+	ela "github.com/elastos/Elastos.ELA/core"
 )
 
 func VerifySignature(tx *ela.Transaction) (bool, error) {
@@ -17,7 +17,9 @@ func VerifySignature(tx *ela.Transaction) (bool, error) {
 		if err := spv.VerifyTransaction(tx); err != nil {
 			return false, errors.New("Issue token transaction validate failed.")
 		}
-
+		if err := checkCrossChainArbitrators(tx); err != nil {
+			return false, err
+		}
 		return true, nil
 	}
 
@@ -56,7 +58,7 @@ func VerifySignature(tx *ela.Transaction) (bool, error) {
 		}
 		if signType == crypto.STANDARD {
 			// Remove length byte and sign type byte
-			publicKeyBytes := code[1: len(code)-1]
+			publicKeyBytes := code[1 : len(code)-1]
 
 			return checkStandardSignature(publicKeyBytes, data, param)
 
@@ -143,7 +145,7 @@ func checkMultiSignSignatures(code, param, content []byte, publicKeys [][]byte) 
 	signatureCount := 0
 	for i := 0; i < len(param); i += crypto.SignatureScriptLength {
 		// Remove length byte
-		sign := param[i: i+crypto.SignatureScriptLength][1:]
+		sign := param[i : i+crypto.SignatureScriptLength][1:]
 		// Get signature index, if signature exists index will not be -1
 		index := -1
 		for i, publicKey := range publicKeys {
@@ -166,6 +168,34 @@ func checkMultiSignSignatures(code, param, content []byte, publicKeys [][]byte) 
 	}
 
 	return true, nil
+}
+
+func checkCrossChainArbitrators(txn *ela.Transaction) error {
+	depositPayload, ok := txn.Payload.(*ela.PayloadIssueToken)
+	if !ok {
+		return errors.New("Invalid payload type.")
+	}
+
+	if mainchain.DbCache == nil {
+		dbCache, err := mainchain.OpenDataStore()
+		if err != nil {
+			errors.New("Open data store failed")
+		}
+		mainchain.DbCache = dbCache
+	}
+
+	ok, err := mainchain.DbCache.HasMainChainTx(depositPayload.MainChainTransactionHash)
+	if err != nil {
+		return err
+	}
+	if ok {
+		return errors.New("Reduplicate withdraw transaction.")
+	}
+	err = mainchain.DbCache.AddMainChainTx(depositPayload.MainChainTransactionHash)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 type byProgramHashes []Uint168
