@@ -8,12 +8,12 @@ import (
 
 	"github.com/elastos/Elastos.ELA.SideChain/config"
 	. "github.com/elastos/Elastos.ELA.SideChain/core"
-	"github.com/elastos/Elastos.ELA.SideChain/log"
 	. "github.com/elastos/Elastos.ELA.SideChain/errors"
 	"github.com/elastos/Elastos.ELA.SideChain/events"
+	"github.com/elastos/Elastos.ELA.SideChain/log"
 
-	ela "github.com/elastos/Elastos.ELA/core"
 	. "github.com/elastos/Elastos.ELA.Utility/common"
+	ela "github.com/elastos/Elastos.ELA/core"
 )
 
 type TxPool struct {
@@ -47,6 +47,11 @@ func (pool *TxPool) AppendToTxnPool(txn *ela.Transaction) ErrCode {
 	}
 	//verify transaction by pool with lock
 	if ok := pool.verifyTransactionWithTxnPool(txn); !ok {
+		return ErrDoubleSpend
+	}
+
+	if err := checkCrossChainTransaction(txn); err != nil {
+		log.Info("Transaction verification failed:", err)
 		return ErrDoubleSpend
 	}
 
@@ -254,7 +259,7 @@ func (pool *TxPool) MaybeAcceptTransaction(txn *ela.Transaction) error {
 		return fmt.Errorf("already have transaction")
 	}
 
-	// A standalone transaction must not be a coinbase 
+	// A standalone transaction must not be a coinbase
 	if txn.IsCoinBaseTx() {
 		return fmt.Errorf("transaction is an individual coinbase")
 	}
@@ -294,6 +299,36 @@ func GetTxFee(tx *ela.Transaction, assetId Uint256) Fixed64 {
 
 func GetTxFeeMap(tx *ela.Transaction) (map[Uint256]Fixed64, error) {
 	feeMap := make(map[Uint256]Fixed64)
+
+	if tx.IsIssueTokenTx() {
+		depositPayload := tx.Payload.(*ela.PayloadIssueToken)
+		mainChainTransaction := new(ela.Transaction)
+		reader := bytes.NewReader(depositPayload.MainChainTransaction)
+		if err := mainChainTransaction.Deserialize(reader); err != nil {
+			return nil, errors.New("GetTxFeeMap mainChainTransaction deserialize failed")
+		}
+
+		crossChainPayload := mainChainTransaction.Payload.(*ela.PayloadTransferCrossChainAsset)
+
+		for index, v := range tx.Outputs {
+			var mcAmount Fixed64
+			for i := 0; i < len(crossChainPayload.CrossChainAddress); i++ {
+				if crossChainPayload.OutputIndex[i] == uint64(index) {
+					mcAmount = mainChainTransaction.Outputs[i].Value
+				}
+			}
+
+			amount, ok := feeMap[v.AssetID]
+			if ok {
+				feeMap[v.AssetID] = amount + mcAmount - v.Value
+			} else {
+				feeMap[v.AssetID] = mcAmount - v.Value
+			}
+		}
+
+		return feeMap, nil
+	}
+
 	reference, err := DefaultLedger.Store.GetTxReference(tx)
 	if err != nil {
 		return nil, err
