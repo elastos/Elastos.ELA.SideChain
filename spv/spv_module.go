@@ -15,15 +15,16 @@ import (
 )
 
 var spvService _interface.SPVService
+var maxConnections = 12
 
 func SpvInit() error {
+	var err error
 	spvlog.Init(config.Parameters.SpvPrintLevel)
-	service, err := _interface.NewSPVService(config.Parameters.SpvMagic,
-		uint64(rand.Int63()), config.Parameters.SpvSeedList, config.Parameters.SpvMinOutbound, config.Parameters.SpvMaxConnections)
+	spvService, err = _interface.NewSPVService(
+		config.Parameters.Magic, uint64(rand.Int63()), config.Parameters.SpvSeedList, maxConnections, maxConnections)
 	if err != nil {
 		return err
 	}
-	spvService = service
 	go func() {
 		if err := spvService.Start(); err != nil {
 			log.Info("spvService start failed ：", err)
