@@ -6,10 +6,11 @@ import (
 	"math/rand"
 
 	"github.com/elastos/Elastos.ELA.SideChain/config"
+	"github.com/elastos/Elastos.ELA.SideChain/core"
+	"github.com/elastos/Elastos.ELA.SideChain/log"
 
 	"github.com/elastos/Elastos.ELA.SPV/interface"
 	spvlog "github.com/elastos/Elastos.ELA.SPV/log"
-	"github.com/elastos/Elastos.ELA.SideChain/log"
 	. "github.com/elastos/Elastos.ELA/bloom"
 	ela "github.com/elastos/Elastos.ELA/core"
 )
@@ -33,12 +34,12 @@ func SpvInit() error {
 	return nil
 }
 
-func VerifyTransaction(tx *ela.Transaction) error {
+func VerifyTransaction(tx *core.Transaction) error {
 	proof := new(MerkleProof)
 	mainChainTransaction := new(ela.Transaction)
 
 	switch object := tx.Payload.(type) {
-	case *ela.PayloadIssueToken:
+	case *core.PayloadIssueToken:
 		reader := bytes.NewReader(object.MerkleProof)
 		if err := proof.Deserialize(reader); err != nil {
 			return errors.New("IssueToken payload deserialize failed")
