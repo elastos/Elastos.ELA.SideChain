@@ -242,8 +242,7 @@ func GetRawTransaction(param Params) map[string]interface{} {
 }
 
 func GetNeighbors(param Params) map[string]interface{} {
-	addr, _ := NodeForServers.GetNeighborAddrs()
-	return ResponsePack(Success, addr)
+	return ResponsePack(Success, NodeForServers.GetNeighborAddrs())
 }
 
 func GetNodeState(param Params) map[string]interface{} {
@@ -976,8 +975,8 @@ func getPayload(pInfo PayloadInfo) (Payload, error) {
 		controller, err := Uint168FromBytes(bytes)
 		obj.Controller = *controller
 		return obj, nil
-	case *IssueTokenInfo:
-		obj := new(PayloadIssueToken)
+	case *RechargeToSideChainInfo:
+		obj := new(PayloadRechargeToSideChain)
 		proofBytes, err := HexStringToBytes(object.Proof)
 		if err != nil {
 			return nil, err
@@ -1016,8 +1015,8 @@ func getPayloadInfo(p Payload) PayloadInfo {
 		obj := new(SideMiningInfo)
 		obj.SideBlockHash = object.SideBlockHash.String()
 		return obj
-	case *PayloadWithdrawAsset:
-		obj := new(WithdrawAssetInfo)
+	case *PayloadWithdrawFromSideChain:
+		obj := new(WithdrawFromSideChainInfo)
 		obj.BlockHeight = object.BlockHeight
 		return obj
 	case *PayloadTransferCrossChainAsset:
@@ -1059,10 +1058,10 @@ func getTransactionInfo(txInfoBytes []byte) (*TransactionInfo, error) {
 		assetInfo = &RegisterAssetInfo{}
 	case SideMining:
 		assetInfo = &SideMiningInfo{}
-	case IssueToken:
-		assetInfo = &IssueTokenInfo{}
-	case WithdrawAsset:
-		assetInfo = &WithdrawAssetInfo{}
+	case RechargeToSideChain:
+		assetInfo = &RechargeToSideChainInfo{}
+	case WithdrawFromSideChain:
+		assetInfo = &WithdrawFromSideChainInfo{}
 	case TransferCrossChainAsset:
 		assetInfo = &TransferCrossChainAssetInfo{}
 	case RegisterIdentification:

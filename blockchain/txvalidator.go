@@ -71,7 +71,7 @@ func CheckTransactionContext(txn *core.Transaction) ErrCode {
 		return ErrTransactionSignature
 	}
 
-	if txn.IsIssueTokenTx() {
+	if txn.IsRechargeToSideChainTx() {
 		return Success
 	}
 
@@ -134,7 +134,7 @@ func CheckTransactionInput(txn *core.Transaction) error {
 		return nil
 	}
 
-	if txn.IsIssueTokenTx() {
+	if txn.IsRechargeToSideChainTx() {
 		return nil
 	}
 
@@ -180,7 +180,7 @@ func CheckTransactionOutput(txn *core.Transaction) error {
 		return nil
 	}
 
-	if txn.IsIssueTokenTx() {
+	if txn.IsRechargeToSideChainTx() {
 		return nil
 	}
 
@@ -194,12 +194,24 @@ func CheckTransactionOutput(txn *core.Transaction) error {
 			return errors.New("asset ID in coinbase is invalid")
 		}
 
-		if !output.ProgramHash.IsValid() {
+		if !CheckOutputProgramHash(output.ProgramHash) {
 			return errors.New("output address is invalid")
 		}
 	}
 
 	return nil
+}
+
+func CheckOutputProgramHash(programHash Uint168) bool {
+	var empty = Uint168{}
+	prefix := programHash[0]
+	if prefix == PrefixStandard ||
+		prefix == PrefixMultisig ||
+		prefix == PrefixCrossChain ||
+		programHash == empty {
+		return true
+	}
+	return false
 }
 
 func CheckTransactionUTXOLock(txn *core.Transaction) error {
@@ -309,8 +321,8 @@ func CheckTransactionPayload(txn *core.Transaction) error {
 	case *core.PayloadRecord:
 	case *core.PayloadCoinBase:
 	case *core.PayloadSideMining:
-	case *core.PayloadWithdrawAsset:
-	case *core.PayloadIssueToken:
+	case *core.PayloadWithdrawFromSideChain:
+	case *core.PayloadRechargeToSideChain:
 	case *core.PayloadTransferCrossChainAsset:
 	default:
 		return errors.New("[txValidator],invalidate transaction payload type.")
