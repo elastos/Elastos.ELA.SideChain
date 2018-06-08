@@ -16,7 +16,7 @@ import (
 )
 
 func VerifySignature(tx *core.Transaction) error {
-	if tx.TxType == core.IssueToken {
+	if tx.TxType == core.RechargeToSideChain {
 		if err := spv.VerifyTransaction(tx); err != nil {
 			return errors.New("Issue token transaction validate failed.")
 		}
@@ -109,11 +109,11 @@ func GetTxProgramHashes(tx *core.Transaction) ([]Uint168, error) {
 }
 
 func checkCrossChainTransaction(txn *core.Transaction) error {
-	if !txn.IsIssueTokenTx() {
+	if !txn.IsRechargeToSideChainTx() {
 		return nil
 	}
 
-	depositPayload, ok := txn.Payload.(*core.PayloadIssueToken)
+	depositPayload, ok := txn.Payload.(*core.PayloadRechargeToSideChain)
 	if !ok {
 		return errors.New("Invalid payload type.")
 	}
@@ -129,7 +129,7 @@ func checkCrossChainTransaction(txn *core.Transaction) error {
 	mainChainTransaction := new(core.Transaction)
 	reader := bytes.NewReader(depositPayload.MainChainTransaction)
 	if err := mainChainTransaction.Deserialize(reader); err != nil {
-		return errors.New("PayloadIssueToken mainChainTransaction deserialize failed")
+		return errors.New("PayloadRechargeToSideChain mainChainTransaction deserialize failed")
 	}
 
 	ok, err := mainchain.DbCache.HasMainChainTx(mainChainTransaction.Hash().String())
