@@ -180,9 +180,6 @@ func CheckTransactionOutput(txn *core.Transaction) error {
 		var totalReward = Fixed64(0)
 		var foundationReward = Fixed64(0)
 		for _, output := range txn.Outputs {
-			if output.AssetID != DefaultLedger.Blockchain.AssetID {
-				return errors.New("asset ID in coinbase is invalid")
-			}
 			totalReward += output.Value
 			if output.ProgramHash.IsEqual(FoundationAddress) {
 				foundationReward += output.Value
@@ -296,29 +293,29 @@ func CheckTransactionBalance(txn *core.Transaction) error {
 	if err != nil {
 		return err
 	}
-	var totalFee Fixed64
-	for _, totalFeeOfAsset := range results {
-		if totalFeeOfAsset < Fixed64(0) {
-			return fmt.Errorf("Transaction fee should not be less then 0")
+	for assetID, totalFeeOfAsset := range results {
+		if assetID == DefaultLedger.Blockchain.AssetID {
+			if totalFeeOfAsset < Fixed64(config.Parameters.PowConfiguration.MinTxFee) {
+				return fmt.Errorf("Transaction fee not enough")
+			}
+		} else if totalFeeOfAsset != Fixed64(0) {
+			return fmt.Errorf("Transaction token asset fee should be 0")
 		}
-		totalFee += totalFeeOfAsset
 	}
-	if totalFee < Fixed64(config.Parameters.PowConfiguration.MinTxFee) {
-		return fmt.Errorf("Transaction fee not enough")
-	}
+
 	return nil
 }
 
-func CheckAttributeProgram(tx *core.Transaction) error {
+func CheckAttributeProgram(txn *core.Transaction) error {
 	// Check attributes
-	for _, attr := range tx.Attributes {
+	for _, attr := range txn.Attributes {
 		if !core.IsValidAttributeType(attr.Usage) {
 			return fmt.Errorf("invalid attribute usage %v", attr.Usage)
 		}
 	}
 
 	// Check programs
-	for _, program := range tx.Programs {
+	for _, program := range txn.Programs {
 		if program.Code == nil {
 			return fmt.Errorf("invalid program code nil")
 		}

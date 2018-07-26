@@ -112,6 +112,25 @@ func GetGenesisBlock() (*core.Block, error) {
 		Programs:   []*core.Program{},
 	}
 
+	// Token
+	tokenCoin := core.Transaction{
+		TxType:         core.RegisterAsset,
+		PayloadVersion: 0,
+		Payload: &core.PayloadRegisterAsset{
+			Asset: core.Asset{
+				Name:      "TOKEN",
+				Precision: 0x08,
+				AssetType: 0x01,
+			},
+			Amount:     0 * 100000000,
+			Controller: Uint168{},
+		},
+		Attributes: []*core.Attribute{},
+		Inputs:     []*core.Input{},
+		Outputs:    []*core.Output{},
+		Programs:   []*core.Program{},
+	}
+
 	// header
 	header := core.Header{
 		Version:    core.BlockVersion,
@@ -133,7 +152,7 @@ func GetGenesisBlock() (*core.Block, error) {
 	//block
 	block := &core.Block{
 		Header:       header,
-		Transactions: []*core.Transaction{&elaCoin},
+		Transactions: []*core.Transaction{&elaCoin, &tokenCoin},
 	}
 	hashes := make([]Uint256, 0, len(block.Transactions))
 	for _, tx := range block.Transactions {
