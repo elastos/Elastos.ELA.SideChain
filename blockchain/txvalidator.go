@@ -205,10 +205,6 @@ func CheckTransactionOutput(txn *core.Transaction) error {
 
 	// check if output address is valid
 	for _, output := range txn.Outputs {
-		if output.AssetID != DefaultLedger.Blockchain.AssetID {
-			return errors.New("asset ID in output is invalid")
-		}
-
 		if !CheckOutputProgramHash(output.ProgramHash) {
 			return errors.New("output address is invalid")
 		}
@@ -300,10 +296,15 @@ func CheckTransactionBalance(txn *core.Transaction) error {
 	if err != nil {
 		return err
 	}
-	for _, v := range results {
-		if v < Fixed64(config.Parameters.PowConfiguration.MinTxFee) {
-			return fmt.Errorf("Transaction fee not enough")
+	var totalFee Fixed64
+	for _, totalFeeOfAsset := range results {
+		if totalFeeOfAsset < Fixed64(0) {
+			return fmt.Errorf("Transaction fee should not be less then 0")
 		}
+		totalFee += totalFeeOfAsset
+	}
+	if totalFee < Fixed64(config.Parameters.PowConfiguration.MinTxFee) {
+		return fmt.Errorf("Transaction fee not enough")
 	}
 	return nil
 }
