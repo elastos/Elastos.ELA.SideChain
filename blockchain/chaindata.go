@@ -111,10 +111,6 @@ func (c *ChainStore) PersistUnspendUTXOs(b *core.Block) error {
 	curHeight := b.Header.Height
 
 	for _, txn := range b.Transactions {
-		if txn.TxType == core.RegisterAsset {
-			continue
-		}
-
 		for index, output := range txn.Outputs {
 			programHash := output.ProgramHash
 			assetID := output.AssetID
@@ -165,7 +161,6 @@ func (c *ChainStore) PersistUnspendUTXOs(b *core.Block) error {
 
 				if _, ok := unspendUTXOs[programHash][assetID][height]; !ok {
 					unspendUTXOs[programHash][assetID][height], err = c.GetUnspentElementFromProgramHash(programHash, assetID, height)
-
 					if err != nil {
 						return errors.New(fmt.Sprintf("[persist] UTXOs programHash:%v, assetId:%v height:%v has no unspent UTXO.", programHash, assetID, height))
 					}
@@ -208,9 +203,6 @@ func (c *ChainStore) RollbackUnspendUTXOs(b *core.Block) error {
 	unspendUTXOs := make(map[Uint168]map[Uint256]map[uint32][]*UTXO)
 	height := b.Header.Height
 	for _, txn := range b.Transactions {
-		if txn.TxType == core.RegisterAsset {
-			continue
-		}
 		for index, output := range txn.Outputs {
 			programHash := output.ProgramHash
 			assetID := output.AssetID
@@ -297,8 +289,14 @@ func (c *ChainStore) PersistTransactions(b *core.Block) error {
 		}
 		if txn.TxType == core.RegisterAsset {
 			regPayload := txn.Payload.(*core.PayloadRegisterAsset)
-			if err := c.PersistAsset(txn.Hash(), regPayload.Asset); err != nil {
-				return err
+			if DefaultLedger.Blockchain.AssetID.IsEqual(txn.Hash()) {
+				if err := c.PersistAsset(txn.Hash(), regPayload.Asset); err != nil {
+					return err
+				}
+			} else {
+				if err := c.PersistAsset(regPayload.Asset.Hash(), regPayload.Asset); err != nil {
+					return err
+				}
 			}
 		}
 		if txn.TxType == core.RechargeToSideChain {
@@ -363,14 +361,10 @@ func (c *ChainStore) RollbackMainchainTx(mainchainTxHash Uint256) error {
 	return nil
 }
 
-
 func (c *ChainStore) PersistUnspend(b *core.Block) error {
 	unspentPrefix := []byte{byte(IX_Unspent)}
 	unspents := make(map[Uint256][]uint16)
 	for _, txn := range b.Transactions {
-		if txn.TxType == core.RegisterAsset {
-			continue
-		}
 		txnHash := txn.Hash()
 		for index := range txn.Outputs {
 			unspents[txnHash] = append(unspents[txnHash], uint16(index))
@@ -421,9 +415,6 @@ func (c *ChainStore) RollbackUnspend(b *core.Block) error {
 	unspentPrefix := []byte{byte(IX_Unspent)}
 	unspents := make(map[Uint256][]uint16)
 	for _, txn := range b.Transactions {
-		if txn.TxType == core.RegisterAsset {
-			continue
-		}
 		// remove all utxos created by this transaction
 		txnHash := txn.Hash()
 		c.BatchDelete(append(unspentPrefix, txnHash.Bytes()...))

@@ -408,9 +408,6 @@ func (c *ChainStore) GetTransaction(txId Uint256) (*core.Transaction, uint32, er
 }
 
 func (c *ChainStore) GetTxReference(tx *core.Transaction) (map[*core.Input]*core.Output, error) {
-	if tx.TxType == core.RegisterAsset {
-		return nil, nil
-	}
 	//UTXO input /  Outputs
 	reference := make(map[*core.Input]*core.Output)
 	// Key index，v UTXOInput

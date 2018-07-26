@@ -1014,7 +1014,7 @@ func getPayload(pInfo PayloadInfo) (Payload, error) {
 		if err != nil {
 			return nil, err
 		}
-		controller, err := Uint168FromBytes(bytes)
+		controller, err := Uint168FromBytes(BytesReverse(bytes))
 		obj.Controller = *controller
 		return obj, nil
 	case *RechargeToSideChainInfo:
