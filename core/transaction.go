@@ -299,6 +299,10 @@ func (tx *Transaction) IsRegisterIdentificationTx() bool {
 	return tx.TxType == RegisterIdentification
 }
 
+func (tx *Transaction) IsRegisterAssetTx() bool {
+	return tx.TxType == RegisterAsset
+}
+
 func NewTrimmedTx(hash Uint256) *Transaction {
 	tx := new(Transaction)
 	tx.hash, _ = Uint256FromBytes(hash[:])

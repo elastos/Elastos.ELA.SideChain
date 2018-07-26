@@ -253,13 +253,14 @@ func TestCheckAssetPrecision(t *testing.T) {
 			Amount: 0 * 100000000,
 		},
 	}
+
 	DefaultLedger.Store.(*ChainStore).NewBatch()
-	DefaultLedger.Store.PersistAsset(register.Hash(), asset)
+	DefaultLedger.Store.PersistAsset(asset.Hash(), asset)
 	DefaultLedger.Store.(*ChainStore).BatchCommit()
 
 	// valid precision
 	for _, output := range tx.Outputs {
-		output.AssetID = register.Hash()
+		output.AssetID = asset.Hash()
 		output.ProgramHash = common.Uint168{}
 		output.Value = 123456780000
 	}
@@ -269,6 +270,15 @@ func TestCheckAssetPrecision(t *testing.T) {
 	// invalid precision
 	for _, output := range tx.Outputs {
 		output.AssetID = register.Hash()
+		output.ProgramHash = common.Uint168{}
+		output.Value = 123456780000
+	}
+	err = CheckAssetPrecision(tx)
+	assert.EqualError(t, err, "The asset not exist in local blockchain.")
+
+	// invalid precision
+	for _, output := range tx.Outputs {
+		output.AssetID = asset.Hash()
 		output.ProgramHash = common.Uint168{}
 		output.Value = 12345678000
 	}
@@ -438,6 +448,98 @@ func TestCheckTransactionBalance(t *testing.T) {
 	DefaultLedger.Store.(*ChainStore).BatchCommit()
 
 	t.Log("[TestCheckTransactionBalance] PASSED")
+}
+
+func TestCheckRegisterAssetTransaction(t *testing.T) {
+	// create asset
+	asset := core.Asset{
+		Name:        "TEST1",
+		Description: "123",
+		Precision:   0x08,
+		AssetType:   0x01,
+		RecordType:  0,
+	}
+
+	asset2 := core.Asset{
+		Name:        "TEST2",
+		Description: "456",
+		Precision:   0x08,
+		AssetType:   0x02,
+		RecordType:  0,
+	}
+
+	DefaultLedger.Store.(*ChainStore).NewBatch()
+	DefaultLedger.Store.PersistAsset(asset2.Hash(), asset2)
+	DefaultLedger.Store.(*ChainStore).BatchCommit()
+
+	// create RegisterAsset transaction
+	tx := new(core.Transaction)
+	tx.TxType = core.RegisterAsset
+	tx.Payload = &core.PayloadRegisterAsset{
+		Asset:      asset,
+		Amount:     common.Fixed64(1000 * ELA),
+		Controller: common.Uint168{1, 2, 3},
+	}
+	tx.Outputs = []*core.Output{
+		{AssetID: asset.Hash(), ProgramHash: tx.Payload.(*core.PayloadRegisterAsset).Controller, Value: common.Fixed64(1000 * ELA)},
+	}
+	err := CheckRegisterAssetTransaction(tx)
+	assert.NoError(t, err)
+
+	// create error RegisterAsset transaction
+	tx = new(core.Transaction)
+	tx.TxType = core.RegisterAsset
+	tx.Payload = &core.PayloadRegisterAsset{
+		Asset:      asset2,
+		Amount:     common.Fixed64(1000 * ELA),
+		Controller: common.Uint168{1, 2, 3},
+	}
+	tx.Outputs = []*core.Output{
+		{AssetID: asset2.Hash(), ProgramHash: tx.Payload.(*core.PayloadRegisterAsset).Controller, Value: common.Fixed64(1000 * ELA)},
+	}
+	err = CheckRegisterAssetTransaction(tx)
+	assert.EqualError(t, err, "Asset name has been registed")
+
+	// create error RegisterAsset transaction
+	tx = new(core.Transaction)
+	tx.TxType = core.RegisterAsset
+	tx.Payload = &core.PayloadRegisterAsset{
+		Asset:      asset,
+		Amount:     common.Fixed64(1000 * ELA),
+		Controller: common.Uint168{1, 2, 3},
+	}
+	tx.Outputs = []*core.Output{
+		{AssetID: asset.Hash(), ProgramHash: common.Uint168{4, 5, 6}, Value: common.Fixed64(1000 * ELA)},
+	}
+	err = CheckRegisterAssetTransaction(tx)
+	assert.EqualError(t, err, "Register asset program hash not same as program hash in payload")
+
+	// create error RegisterAsset transaction
+	tx = new(core.Transaction)
+	tx.TxType = core.RegisterAsset
+	tx.Payload = &core.PayloadRegisterAsset{
+		Asset:      asset,
+		Amount:     common.Fixed64(100 * ELA),
+		Controller: common.Uint168{1, 2, 3},
+	}
+	tx.Outputs = []*core.Output{
+		{AssetID: asset.Hash(), ProgramHash: tx.Payload.(*core.PayloadRegisterAsset).Controller, Value: common.Fixed64(1000 * ELA)},
+	}
+	err = CheckRegisterAssetTransaction(tx)
+	assert.EqualError(t, err, "Invalid register asset amount")
+
+	// create error RegisterAsset transaction
+	tx = new(core.Transaction)
+	tx.TxType = core.RegisterAsset
+	tx.Payload = &core.PayloadRegisterAsset{
+		Asset:      asset,
+		Amount:     common.Fixed64(1000 * ELA),
+		Controller: common.Uint168{1, 2, 3},
+	}
+	err = CheckRegisterAssetTransaction(tx)
+	assert.EqualError(t, err, "Invalid register asset amount")
+
+	t.Log("[TestCheckRegisterAssetTransaction] PASSED")
 }
 
 func TestTxValidatorDone(t *testing.T) {
