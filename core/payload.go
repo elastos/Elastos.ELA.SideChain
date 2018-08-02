@@ -34,6 +34,8 @@ func GetPayload(txType TransactionType) (Payload, error) {
 		p = new(PayloadTransferCrossChainAsset)
 	case RegisterIdentification:
 		p = new(PayloadRegisterIdentification)
+	case Deploy:
+		p = new(PayloadDeploy)
 	default:
 		return nil, errors.New("[Transaction], invalid transaction type.")
 	}
