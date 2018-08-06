@@ -267,7 +267,7 @@ func TestCheckAssetPrecision(t *testing.T) {
 	err = CheckAssetPrecision(tx)
 	assert.NoError(t, err)
 
-	// valid precision
+	// invalid precision
 	for _, output := range tx.Outputs {
 		output.AssetID = register.Hash()
 		output.ProgramHash = common.Uint168{}
