@@ -3,29 +3,29 @@ package smartcontract
 import (
 	"math/big"
 	"bytes"
-
-	"github.com/elastos/Elastos.ELA.Utility/common"
+	"strconv"
 
 	"github.com/elastos/Elastos.ELA.SideChain/contract"
 	"github.com/elastos/Elastos.ELA.SideChain/vm"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/service"
-	. "github.com/elastos/Elastos.ELA.SideChain/common"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/types"
 	"github.com/elastos/Elastos.ELA.SideChain/core"
 	"github.com/elastos/Elastos.ELA.SideChain/servers"
-		"strconv"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/storage"
+	. "github.com/elastos/Elastos.ELA.SideChain/common"
+
+	"github.com/elastos/Elastos.ELA.Utility/common"
 )
 
 type SmartContract struct {
-	Engine 			Engine
-	Code   			[]byte
-	Input			[]byte
-	ParameterTypes	[]contract.ContractParameterType
-	Caller          common.Uint168
-	CodeHash        common.Uint168
-	ReturnType      contract.ContractParameterType
+	Engine         Engine
+	Code           []byte
+	Input          []byte
+	ParameterTypes []contract.ContractParameterType
+	Caller         common.Uint168
+	CodeHash       common.Uint168
+	ReturnType     contract.ContractParameterType
 }
 
 type Context struct {
@@ -51,12 +51,12 @@ type Engine interface {
 
 func NewSmartContract(context *Context) (*SmartContract, error) {
 	e := vm.NewExecutionEngine(context.SignableData,
-								new(vm.CryptoECDsa),
-								vm.MAXSTEPS,
-								context.CacheCodeTable,
-								nil,
-								0,
-								)
+		new(vm.CryptoECDsa),
+		vm.MAXSTEPS,
+		context.CacheCodeTable,
+		nil,
+		0,
+	)
 	return &SmartContract{
 		Engine:         e,
 		Code:           context.Code,

@@ -1,4 +1,4 @@
-package blockchain
+package leveldb
 
 import (
 	"github.com/syndtr/goleveldb/leveldb/iterator"

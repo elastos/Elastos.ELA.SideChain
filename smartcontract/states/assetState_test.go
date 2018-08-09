@@ -2,18 +2,20 @@ package states
 
 import (
 	"testing"
-	"github.com/elastos/Elastos.ELA.Utility/common"
-	"github.com/elastos/Elastos.ELA.SideChain/core"
-		"github.com/elastos/Elastos.ELA.Utility/crypto"
 	"math/big"
 	"bytes"
+
+	"github.com/elastos/Elastos.ELA.SideChain/core"
+
+	"github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.Utility/crypto"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAssetState(t *testing.T) {
 	assetState := AssetState{}
 	assetState.StateVersion = 2
-	assetState.AssetId = common.Uint256{3,3,1}
+	assetState.AssetId = common.Uint256{3, 3, 1}
 	assetState.AssetType = core.Share
 	assetState.Name = "name"
 	assetState.Amount = 3
@@ -21,11 +23,11 @@ func TestAssetState(t *testing.T) {
 	assetState.Precision = 3
 	assetState.FeeMode = 1
 	assetState.Fee = 234
-	assetState.FeeAddress = common.Uint168{1,2,3}
+	assetState.FeeAddress = common.Uint168{1, 2, 3}
 	pubKey := crypto.PublicKey{X: big.NewInt(1), Y: big.NewInt(2)}
 	assetState.Owner = &pubKey
-	assetState.Admin = common.Uint168{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2}
-	assetState.Issuer = common.Uint168{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,1}
+	assetState.Admin = common.Uint168{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2}
+	assetState.Issuer = common.Uint168{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 1}
 	assetState.Expiration = 233
 	assetState.IsFrozen = true
 

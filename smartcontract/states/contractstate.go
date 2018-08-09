@@ -11,11 +11,11 @@ import (
 
 type ContractState struct {
 	StateBase
-	Code *contract.FunctionCode
-	Name string
-	Version string
-	Author string
-	Email string
+	Code        *contract.FunctionCode
+	Name        string
+	Version     string
+	Author      string
+	Email       string
 	Description string
 	ProgramHash common.Uint168
 }

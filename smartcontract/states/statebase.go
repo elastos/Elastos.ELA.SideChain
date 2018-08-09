@@ -2,8 +2,9 @@ package states
 
 import (
 	"io"
-	"github.com/elastos/Elastos.ELA.Utility/common"
 	"errors"
+
+	"github.com/elastos/Elastos.ELA.Utility/common"
 )
 
 type StateBase struct {

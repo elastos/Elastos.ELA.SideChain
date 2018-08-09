@@ -4,10 +4,10 @@ import (
 	"math/big"
 
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
-	. "github.com/elastos/Elastos.ELA.SideChain/common"
+	. "github.com/elastos/Elastos.ELA.SideChain/store"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
-	)
+)
 
 type DBCache interface {
 	GetOrAdd(prefix DataEntryPrefix, key string, value states.IStateValueInterface) (states.IStateValueInterface, error)
@@ -23,16 +23,15 @@ type DBCache interface {
 	Suicide(codeHash common.Uint168) bool
 }
 
-
 type CloneCache struct {
 	innerCache DBCache
-	dbCache DBCache
+	dbCache    DBCache
 }
 
 func NewCloneDBCache(innerCache DBCache, dbCache DBCache) *CloneCache {
 	return &CloneCache{
 		innerCache: innerCache,
-		dbCache: dbCache,
+		dbCache:    dbCache,
 	}
 }
 
@@ -40,7 +39,7 @@ func (cloneCache *CloneCache) GetInnerCache() DBCache {
 	return cloneCache.innerCache
 }
 
-func (cloneCache *CloneCache) Commit()  {
+func (cloneCache *CloneCache) Commit() {
 	for _, v := range cloneCache.innerCache.GetWriteSet().WriteSet {
 		if v.IsDeleted {
 			cloneCache.innerCache.GetWriteSet().Delete(v.Key)

@@ -16,6 +16,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/servers/httprestful"
 	"github.com/elastos/Elastos.ELA.SideChain/servers/httpwebsocket"
 	"github.com/elastos/Elastos.ELA.SideChain/spv"
+	"github.com/elastos/Elastos.ELA.SideChain/store/chain_store"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
 )
@@ -62,7 +63,7 @@ func main() {
 	var noder protocol.Noder
 	log.Info("Node version: ", config.Version)
 	log.Info("1. BlockChain init")
-	chainStore, err := blockchain.NewChainStore()
+	chainStore, err := chain_store.NewChainStore()
 	if err != nil {
 		log.Fatal("open LedgerStore err:", err)
 		goto ERROR

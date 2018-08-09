@@ -1,24 +1,25 @@
-package blockchain
+package chain_store
 
 import (
 	"bytes"
-
-	"github.com/elastos/Elastos.ELA.Utility/common"
-	."github.com/elastos/Elastos.ELA.SideChain/common"
 	"math/big"
+
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/storage"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
-	)
+	. "github.com/elastos/Elastos.ELA.SideChain/store"
+
+	"github.com/elastos/Elastos.ELA.Utility/common"
+)
 
 type DBCache struct {
 	RWSet *storage.RWSet
-	db *ChainStore
+	db    *ChainStore
 }
 
-func NewDBCache(db *ChainStore) *DBCache{
+func NewDBCache(db *ChainStore) *DBCache {
 	return &DBCache{
 		RWSet: storage.NewRWSet(),
-		db: db,
+		db:    db,
 	}
 }
 
@@ -26,7 +27,7 @@ func (cache *DBCache) Commit() {
 	rwSet := cache.RWSet.WriteSet
 	for k, v := range rwSet {
 		key := make([]byte, 0)
-		key = append([]byte{byte(v.Prefix)},[]byte(k)...)
+		key = append([]byte{byte(v.Prefix)}, []byte(k)...)
 		if v.IsDeleted {
 			cache.db.IStore.BatchDelete(key)
 		} else {
@@ -61,9 +62,9 @@ func (cache *DBCache) GetOrAdd(prefix DataEntryPrefix, key string, value states.
 			return nil, err
 		}
 		write := &storage.Write{
-			Prefix: prefix,
-			Key: key,
-			Item: item,
+			Prefix:    prefix,
+			Key:       key,
+			Item:      item,
 			IsDeleted: false,
 		}
 		if write.Item == nil {
@@ -74,7 +75,7 @@ func (cache *DBCache) GetOrAdd(prefix DataEntryPrefix, key string, value states.
 	return cache.RWSet.WriteSet[key].Item, nil
 }
 
-func (cache *DBCache) TryGet (prefix DataEntryPrefix, key string) (states.IStateValueInterface, error)  {
+func (cache *DBCache) TryGet(prefix DataEntryPrefix, key string) (states.IStateValueInterface, error) {
 	if v, ok := cache.RWSet.WriteSet[key]; ok {
 		return v.Item, nil
 	} else {
@@ -86,7 +87,7 @@ func (cache *DBCache) GetWriteSet() *storage.RWSet {
 	return cache.RWSet
 }
 
-func (cache *DBCache) GetBalance(hash common.Uint168) *big.Int  {
+func (cache *DBCache) GetBalance(hash common.Uint168) *big.Int {
 	return big.NewInt(100)
 }
 

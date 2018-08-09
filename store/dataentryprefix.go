@@ -1,4 +1,4 @@
-package common
+package store
 
 type DataEntryPrefix byte
 
@@ -16,8 +16,9 @@ const (
 	IX_MainChain_Tx   DataEntryPrefix = 0x93
 
 	// ASSET
-	ST_Info 		  DataEntryPrefix = 0xc0
-	ST_Contract       DataEntryPrefix = 0xc2
+	ST_Info     DataEntryPrefix = 0xc0
+	ST_Contract DataEntryPrefix = 0xc2
+
 	//SYSTEM
 	SYS_CurrentBlock      DataEntryPrefix = 0x40
 	SYS_CurrentBookKeeper DataEntryPrefix = 0x42

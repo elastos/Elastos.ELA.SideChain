@@ -3,7 +3,8 @@ package vm
 import (
 	"bytes"
 	"encoding/binary"
-	"DNA/common"
+
+	"github.com/elastos/Elastos.ELA.Utility/common"
 )
 
 type ParamsBuilder struct {
@@ -14,7 +15,7 @@ func NewParamsBuider(buffer *bytes.Buffer) *ParamsBuilder {
 	return &ParamsBuilder{buffer}
 }
 
-func (p *ParamsBuilder) Emit(op OpCode)  {
+func (p *ParamsBuilder) Emit(op OpCode) {
 	p.buffer.WriteByte(byte(op))
 }
 

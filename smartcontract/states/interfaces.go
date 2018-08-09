@@ -2,11 +2,11 @@ package states
 
 import (
 	"io"
-	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
-
 	"bytes"
-	"github.com/elastos/Elastos.ELA.SideChain/common"
-	)
+
+	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
+	. "github.com/elastos/Elastos.ELA.SideChain/store"
+)
 
 type IStateValueInterface interface {
 	Serialize(w io.Writer) error
@@ -15,17 +15,17 @@ type IStateValueInterface interface {
 }
 
 type IStateKeyInterface interface {
-	Serialize(w io.Writer)  error
+	Serialize(w io.Writer) error
 	Deserialize(r io.Reader) error
 }
 
 var (
-	StatesMap = map[common.DataEntryPrefix]IStateValueInterface{
-		common.ST_Contract: new(ContractState),
+	StatesMap = map[DataEntryPrefix]IStateValueInterface{
+		ST_Contract: new(ContractState),
 	}
 )
 
-func GetStateValue(prefix common.DataEntryPrefix, data[]byte) (IStateValueInterface, error)  {
+func GetStateValue(prefix DataEntryPrefix, data []byte) (IStateValueInterface, error) {
 	r := bytes.NewBuffer(data)
 	state := StatesMap[prefix]
 	err := state.Deserialize(r)

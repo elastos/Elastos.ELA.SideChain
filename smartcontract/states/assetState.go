@@ -1,12 +1,14 @@
 package states
 
 import (
-	"github.com/elastos/Elastos.ELA.Utility/common"
-	"github.com/elastos/Elastos.ELA.SideChain/core"
-	"github.com/elastos/Elastos.ELA.Utility/crypto"
 	"io"
 	"errors"
 	"bytes"
+
+	"github.com/elastos/Elastos.ELA.SideChain/core"
+
+	"github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.Utility/crypto"
 )
 
 type AssetState struct {
@@ -50,7 +52,7 @@ func (assetState *AssetState) Serialize(w io.Writer) error {
 	return nil
 }
 
-func (assetState *AssetState)Deserialize(r io.Reader) error {
+func (assetState *AssetState) Deserialize(r io.Reader) error {
 	u256 := new(common.Uint256)
 	u168 := new(common.Uint168)
 	f := new(common.Fixed64)

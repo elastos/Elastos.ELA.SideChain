@@ -1,26 +1,27 @@
 package storage
 
 import (
-	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
 	"errors"
 	"bytes"
-	"github.com/elastos/Elastos.ELA.SideChain/common"
-	)
+
+	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
+	. "github.com/elastos/Elastos.ELA.SideChain/store"
+)
 
 type RWSet struct {
-	ReadSet map[string]*Read
+	ReadSet  map[string]*Read
 	WriteSet map[string]*Write
 }
 
 type Write struct {
-	Prefix common.DataEntryPrefix
-	Key string
-	Item states.IStateValueInterface
+	Prefix    DataEntryPrefix
+	Key       string
+	Item      states.IStateValueInterface
 	IsDeleted bool
 }
 
 type Read struct {
-	Key states.IStateKeyInterface
+	Key     states.IStateKeyInterface
 	Version string
 }
 
@@ -31,15 +32,15 @@ func NewRWSet() *RWSet {
 	return rwSet
 }
 
-func (rw *RWSet) Add(prefix common.DataEntryPrefix, key string, value states.IStateValueInterface) error{
+func (rw *RWSet) Add(prefix DataEntryPrefix, key string, value states.IStateValueInterface) error {
 	_, ok := rw.WriteSet[key]
 	if ok {
 		return errors.New("RWSet is allready added:" + key)
 	}
 	rw.WriteSet[key] = &Write{
-		Prefix: prefix,
-		Key: key,
-		Item: value,
+		Prefix:    prefix,
+		Key:       key,
+		Item:      value,
 		IsDeleted: false,
 	}
 	return nil;
@@ -51,8 +52,8 @@ func (rw *RWSet) Delete(key string) {
 		rw.WriteSet[key].IsDeleted = true
 	} else {
 		rw.WriteSet[key] = &Write{
-			Key: key,
-			Item: nil,
+			Key:       key,
+			Item:      nil,
 			IsDeleted: true,
 		}
 	}

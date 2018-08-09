@@ -1,4 +1,4 @@
-package blockchain
+package leveldb
 
 import (
 	"github.com/syndtr/goleveldb/leveldb"
@@ -6,6 +6,8 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/util"
+
+	"github.com/elastos/Elastos.ELA.SideChain/store"
 )
 
 type LevelDB struct {
@@ -73,7 +75,7 @@ func (db *LevelDB) Close() error {
 	return db.db.Close()
 }
 
-func (db *LevelDB) NewIterator(prefix []byte) IIterator {
+func (db *LevelDB) NewIterator(prefix []byte) store.IIterator {
 	iter := db.db.NewIterator(util.BytesPrefix(prefix), nil)
 	return &Iterator{iter: iter}
 }
