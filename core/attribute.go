@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"bytes"
 
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 )
@@ -92,4 +93,10 @@ func (tx *Attribute) Deserialize(r io.Reader) error {
 		return errors.New("Transaction attribute Data deserialization error.")
 	}
 	return nil
+}
+
+func (tx *Attribute) Bytes() []byte {
+	buf := new(bytes.Buffer)
+	tx.Serialize(buf)
+	return buf.Bytes()
 }

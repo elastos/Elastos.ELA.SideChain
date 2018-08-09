@@ -77,3 +77,9 @@ func (header *Header) Hash() Uint256 {
 	header.serializeNoAux(buf)
 	return Uint256(Sha256D(buf.Bytes()))
 }
+
+func (header *Header)Bytes() ([]byte) {
+	b := new(bytes.Buffer)
+	header.Serialize(b)
+	return b.Bytes()
+}

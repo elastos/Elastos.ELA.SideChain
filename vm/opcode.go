@@ -39,6 +39,7 @@ const (
 	RET      = 0x66
 	APPCALL  = 0x67
 	SYSCALL  = 0x68
+	TAILCALL = 0x69
 
 	// Stack
 	TOALTSTACK   = 0x6B // Puts the input onto the top of the alt stack. Removes it from the main stack.

@@ -9,7 +9,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
 
 	. "github.com/elastos/Elastos.ELA.Utility/common"
-)
+	)
 
 //for different transaction types with different payload format
 //and transaction process methods
@@ -26,6 +26,7 @@ const (
 	WithdrawFromSideChain   TransactionType = 0x07
 	TransferCrossChainAsset TransactionType = 0x08
 	RegisterIdentification  TransactionType = 0x09
+	Invoke                  TransactionType = 0x0A
 )
 
 func (self TransactionType) Name() string {
@@ -50,6 +51,8 @@ func (self TransactionType) Name() string {
 		return "TransferCrossChainAsset"
 	case RegisterIdentification:
 		return "RegisterIdentification"
+	case Invoke:
+		return "Invoke"
 	default:
 		return "Unknown"
 	}
@@ -322,4 +325,16 @@ func (tx *Transaction) GetDataContainer(programHash *Uint168) interfaces.IDataCo
 		}
 	}
 	return tx
+}
+
+func (tx *Transaction) SetPrograms(programs []*Program) {
+	tx.Programs = programs
+}
+
+func (tx *Transaction) GetPrograms() []*Program {
+	return tx.Programs
+}
+
+func (tx *Transaction) Bytes() []byte {
+	return tx.GetData()
 }

@@ -2,10 +2,12 @@ package vm
 
 import (
 	"encoding/binary"
-	"github.com/elastos/Elastos.ELA.SideChain/vm/errors"
-	"github.com/elastos/Elastos.ELA.SideChain/vm/types"
 	"math/big"
 	"reflect"
+
+	"github.com/elastos/Elastos.ELA.SideChain/vm/errors"
+	"github.com/elastos/Elastos.ELA.SideChain/vm/types"
+	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
 )
 
 type BigIntSorter []big.Int
@@ -364,4 +366,115 @@ func AssertStackItem(stackItem interface{}) types.StackItem {
 		return s
 	}
 	return nil
+}
+
+func PopBigInt(e *ExecutionEngine) *big.Int {
+	x := PopStackItem(e)
+	return x.GetBigInteger()
+}
+
+func PopInt(e *ExecutionEngine) int {
+	x := PopBigInt(e)
+	return int(x.Int64())
+}
+
+func PopBoolean(e *ExecutionEngine) bool {
+	x := PopStackItem(e)
+	return x.GetBoolean()
+}
+
+func PopArray(e *ExecutionEngine) []types.StackItem {
+	x := PopStackItem(e)
+	return x.GetArray()
+}
+
+func PopInteropInterface(e *ExecutionEngine) interfaces.IGeneralInterface {
+	x := PopStackItem(e)
+	return x.GetInterface()
+}
+
+func PopByteArray(e *ExecutionEngine) []byte {
+	x := PopStackItem(e)
+	return x.GetByteArray()
+}
+
+func PopStackItem(e *ExecutionEngine) types.StackItem {
+	return Pop(e).(types.StackItem)
+}
+
+func Pop(e *ExecutionEngine) interface{} {
+	return e.evaluationStack.Pop()
+}
+
+func PeekArray(e *ExecutionEngine) []types.StackItem {
+	x := PeekStackItem(e)
+	return x.GetArray()
+}
+
+func PeekInteropInterface(e *ExecutionEngine) interfaces.IGeneralInterface {
+	x := PeekStackItem(e)
+	return x.GetInterface()
+}
+
+func PeekInt(e *ExecutionEngine) int {
+	x := PeekBigInteger(e)
+	n := int(x.Int64())
+	return n
+}
+
+func PeekBigInteger(e *ExecutionEngine) *big.Int {
+     x := PeekStackItem(e)
+     return x.GetBigInteger()
+}
+
+func PeekStackItem(e *ExecutionEngine) types.StackItem  {
+	return Peek(e).(types.StackItem)
+}
+
+func PeekNInt(i int , e *ExecutionEngine) int {
+	x := PeekNBigInt(i, e)
+	n := int(x.Int64())
+	return n;
+}
+
+func PeekNBigInt(i int, e *ExecutionEngine) *big.Int {
+	x := PeekNStackItem(i, e)
+	return x.GetBigInteger()
+}
+
+func PeekNByteArray(i int, e *ExecutionEngine) []byte {
+	x := PeekNStackItem(i, e)
+	return x.GetByteArray()
+}
+
+func PeekNStackItem(i int, e *ExecutionEngine) types.StackItem {
+	return PeekN(i, e).(types.StackItem)
+}
+
+func PeekN(i int, e *ExecutionEngine) interface{} {
+	return e.evaluationStack.Peek(i)
+}
+
+func Peek(e *ExecutionEngine) interface{}  {
+	return e.evaluationStack.Peek(0)
+}
+
+func EvaluationStackCount(e *ExecutionEngine) int {
+	return e.evaluationStack.Count();
+}
+
+func Push(e *ExecutionEngine, element interface{})  {
+	e.evaluationStack.Push(element)
+}
+
+func Count(e *ExecutionEngine) int {
+	return e.evaluationStack.Count()
+}
+
+func PushData(e *ExecutionEngine, data interface{})  {
+	d, err := NewStackItem(data)
+	if err != nil {
+		return;
+	}
+	e.evaluationStack.Push(d)
 }

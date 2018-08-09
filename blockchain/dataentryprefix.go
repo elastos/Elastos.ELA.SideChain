@@ -1,6 +1,5 @@
-package blockchain
+package common
 
-// DataEntryPrefix
 type DataEntryPrefix byte
 
 const (
@@ -17,12 +16,12 @@ const (
 	IX_MainChain_Tx   DataEntryPrefix = 0x93
 
 	// ASSET
-	ST_Info DataEntryPrefix = 0xc0
-
+	ST_Info 		  DataEntryPrefix = 0xc0
+	ST_Contract       DataEntryPrefix = 0xc2
 	//SYSTEM
 	SYS_CurrentBlock      DataEntryPrefix = 0x40
 	SYS_CurrentBookKeeper DataEntryPrefix = 0x42
 
-	//CONFIG
+	//CONFIGST_Contract       DataEntryPrefix = 0xc2
 	CFG_Version DataEntryPrefix = 0xf0
 )

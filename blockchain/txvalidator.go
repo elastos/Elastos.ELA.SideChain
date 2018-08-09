@@ -356,6 +356,8 @@ func CheckTransactionPayload(txn *core.Transaction) error {
 	case *core.PayloadTransferCrossChainAsset:
 	case *core.PayloadRegisterIdentification:
 	case *core.PayloadDeploy:
+	case *core.PayloadInvoke:
+		
 	default:
 		return errors.New("[txValidator],invalidate transaction payload type.")
 	}

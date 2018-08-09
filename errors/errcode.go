@@ -36,6 +36,8 @@ const (
 	UnknownAsset            ErrCode = 44002
 	UnknownBlock            ErrCode = 44003
 	InternalError           ErrCode = 45002
+
+	SmartCodeError          ErrCode = 47001
 )
 
 var ErrMap = map[ErrCode]string{
@@ -68,6 +70,7 @@ var ErrMap = map[ErrCode]string{
 	ErrUnknownReferedTxn:    "INTERNAL ERROR, ErrUnknownReferedTxn",
 	ErrInvalidReferedTxn:    "INTERNAL ERROR, ErrInvalidReferedTxn",
 	ErrIneffectiveCoinbase:  "INTERNAL ERROR, ErrIneffectiveCoinbase",
+	SmartCodeError:          "INTERNAL ERROR,SmartCode Exec error",
 }
 
 func (code ErrCode) Message() string {

@@ -5,6 +5,7 @@ import (
 	"io"
 
 	. "github.com/elastos/Elastos.ELA.Utility/common"
+	"bytes"
 )
 
 type Output struct {
@@ -67,4 +68,10 @@ func (o *Output) Deserialize(r io.Reader) error {
 	}
 
 	return nil
+}
+
+func (o *Output) Bytes() []byte {
+	buff := new(bytes.Buffer)
+	o.Serialize(buff)
+	return buff.Bytes()
 }

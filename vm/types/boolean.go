@@ -2,6 +2,7 @@ package types
 
 import (
 	"math/big"
+	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
 )
 
 type Boolean struct {
@@ -42,8 +43,8 @@ func (b *Boolean) GetByteArray() []byte{
 	return []byte{0}
 }
 
-func (b *Boolean) GetInterface(){
-
+func (b *Boolean) GetInterface() interfaces.IGeneralInterface {
+	return nil
 }
 
 func (b *Boolean) GetArray() []StackItem {

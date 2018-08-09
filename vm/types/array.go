@@ -2,6 +2,7 @@ package types
 
 import (
 	"math/big"
+	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
 )
 
 type Array struct {
@@ -46,8 +47,8 @@ func (a *Array) GetByteArray() []byte{
 	return []byte{}
 }
 
-func (a *Array) GetInterface(){
-
+func (a *Array) GetInterface() interfaces.IGeneralInterface {
+	return nil
 }
 
 func (a *Array) GetArray() []StackItem{

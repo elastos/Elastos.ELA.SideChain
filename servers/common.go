@@ -4,7 +4,7 @@ import (
 	. "github.com/elastos/Elastos.ELA.SideChain/core"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
-)
+		)
 
 const TlsPort = 443
 
@@ -72,6 +72,16 @@ type BlockInfo struct {
 	PreviousBlockHash string        `json:"previousblockhash"`
 	NextBlockHash     string        `json:"nextblockhash"`
 	AuxPow            string        `json:"auxpow"`
+}
+
+type BlockHead struct {
+	Version          uint32
+	PrevBlockHash    string
+	TransactionsRoot string
+	Timestamp        uint32
+	Height           uint32
+	Nonce            uint32
+	Hash             string
 }
 
 type NodeInfo struct {

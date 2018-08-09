@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
+	"bytes"
 )
 
 //AssetType
@@ -93,4 +94,10 @@ func (a *Asset) Deserialize(r io.Reader) error {
 		return errors.New("[Asset], RecordType deserialize failed.")
 	}
 	return nil
+}
+
+func (asset *Asset) Bytes() []byte {
+	buff := new(bytes.Buffer)
+	asset.Serialize(buff)
+	return buff.Bytes()
 }

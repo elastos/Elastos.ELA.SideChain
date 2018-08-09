@@ -7,11 +7,13 @@ import (
 
 	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/utils"
+	"github.com/elastos/Elastos.ELA.Utility/common"
 )
 
 const MAXSTEPS int = 1200
 
-func NewExecutionEngine(container interfaces.IDataContainer, crypto interfaces.ICrypto, maxSteps int, table interfaces.IScriptTable, service *GeneralService) *ExecutionEngine {
+func NewExecutionEngine(container interfaces.IDataContainer, crypto interfaces.ICrypto, maxSteps int,
+						table interfaces.IScriptTable, service *GeneralService, gas common.Fixed64) *ExecutionEngine {
 	var engine ExecutionEngine
 
 	engine.crypto = crypto
@@ -30,12 +32,13 @@ func NewExecutionEngine(container interfaces.IDataContainer, crypto interfaces.I
 
 	engine.maxSteps = maxSteps
 
+	engine.service = NewGeneralService()
 	if service != nil {
 		engine.service = service
 	}
 
-	engine.service = NewGeneralService()
 
+	engine.gas = gas.IntValue()
 	return &engine
 }
 
@@ -58,6 +61,11 @@ type ExecutionEngine struct {
 
 	//current opcode
 	opCode OpCode
+	gas    int64
+}
+
+func (e *ExecutionEngine) GetDataContainer() interfaces.IDataContainer {
+	return e.dataContainer
 }
 
 func (e *ExecutionEngine) GetState() VMState {
@@ -89,6 +97,21 @@ func (e *ExecutionEngine) CallingScript() []byte {
 		return nil
 	}
 	return nil
+}
+
+
+func (e *ExecutionEngine) Create(caller common.Uint168, code []byte) ([]byte, error) {
+	return code, nil
+}
+
+func (e *ExecutionEngine) Call(caller common.Uint168, codeHash common.Uint168, input []byte) ([]byte, error) {
+	e.LoadScript(input, false)
+	e.Execute()
+	return nil, nil
+}
+
+func (e *ExecutionEngine) Hash160(script []byte) []byte {
+	return e.crypto.Hash168(script)
 }
 
 func (e *ExecutionEngine) EntryScript() []byte {

@@ -1,5 +1,10 @@
 package vm
 
+type IInteropService interface {
+	Register(method string, handler func(*ExecutionEngine) (bool, error)) bool
+	GetServiceMap() map[string]func(*ExecutionEngine) (bool, error)
+}
+
 type GeneralService struct {
 	dictionary map[string]func(*ExecutionEngine) bool
 }
@@ -20,6 +25,10 @@ func (is *GeneralService) Register(method string, handler func(*ExecutionEngine)
 	}
 	is.dictionary[method] = handler
 	return true
+}
+
+func (i *GeneralService) GetServiceMap() map[string]func(*ExecutionEngine) (bool) {
+	return i.dictionary
 }
 
 func (is *GeneralService) Invoke(method string, engine *ExecutionEngine) bool {

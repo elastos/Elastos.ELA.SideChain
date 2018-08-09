@@ -12,12 +12,22 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/log"
 
 	. "github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
+	"github.com/elastos/Elastos.ELA.SideChain/common"
+	//"github.com/elastos/Elastos.ELA.SideChain/smartcontract"
+	//"github.com/elastos/Elastos.ELA.SideChain/smartcontract/service"
+	//"math/big"
+	//"github.com/elastos/Elastos.ELA.SideChain/servers/httpwebsocket"
+	//."github.com/elastos/Elastos.ELA.SideChain/errors"
 )
 
 const ValueNone = 0
 const ValueExist = 1
 
 const TaskChanCap = 4
+
+const DEPLOY_TRANSACTION  = "DeployTransaction"
+const INVOKE_TRANSACTION  = "InvokeTransaction"
 
 var (
 	ErrDBNotFound = errors.New("leveldb: not found")
@@ -121,7 +131,7 @@ func (c *ChainStore) clearCache(b *core.Block) {
 }
 
 func (c *ChainStore) InitWithGenesisBlock(genesisBlock *core.Block) (uint32, error) {
-	prefix := []byte{byte(CFG_Version)}
+	prefix := []byte{byte(common.CFG_Version)}
 	version, err := c.Get(prefix)
 	if err != nil {
 		version = []byte{0x00}
@@ -162,7 +172,7 @@ func (c *ChainStore) InitWithGenesisBlock(genesisBlock *core.Block) (uint32, err
 	DefaultLedger.Blockchain.GenesisHash = hash
 
 	// Get Current Block
-	currentBlockPrefix := []byte{byte(SYS_CurrentBlock)}
+	currentBlockPrefix := []byte{byte(common.SYS_CurrentBlock)}
 	data, err := c.Get(currentBlockPrefix)
 	if err != nil {
 		return 0, err
@@ -203,7 +213,7 @@ func (c *ChainStore) InitWithGenesisBlock(genesisBlock *core.Block) (uint32, err
 }
 
 func (c *ChainStore) IsTxHashDuplicate(txhash Uint256) bool {
-	prefix := []byte{byte(DATA_Transaction)}
+	prefix := []byte{byte(common.DATA_Transaction)}
 	_, err_get := c.Get(append(prefix, txhash.Bytes()...))
 	if err_get != nil {
 		return false
@@ -217,7 +227,7 @@ func (c *ChainStore) IsDoubleSpend(txn *core.Transaction) bool {
 		return false
 	}
 
-	unspentPrefix := []byte{byte(IX_Unspent)}
+	unspentPrefix := []byte{byte(common.IX_Unspent)}
 	for i := 0; i < len(txn.Inputs); i++ {
 		txhash := txn.Inputs[i].Previous.TxID
 		unspentValue, err_get := c.Get(append(unspentPrefix, txhash.Bytes()...))
@@ -243,7 +253,7 @@ func (c *ChainStore) IsDoubleSpend(txn *core.Transaction) bool {
 }
 
 func (c *ChainStore) IsMainchainTxHashDuplicate(mainchainTxHash Uint256) bool {
-	prefix := []byte{byte(IX_MainChain_Tx)}
+	prefix := []byte{byte(common.IX_MainChain_Tx)}
 	_, err := c.Get(append(prefix, mainchainTxHash.Bytes()...))
 	if err != nil {
 		return false
@@ -254,7 +264,7 @@ func (c *ChainStore) IsMainchainTxHashDuplicate(mainchainTxHash Uint256) bool {
 
 func (c *ChainStore) GetBlockHash(height uint32) (Uint256, error) {
 	queryKey := bytes.NewBuffer(nil)
-	queryKey.WriteByte(byte(DATA_BlockHash))
+	queryKey.WriteByte(byte(common.DATA_BlockHash))
 	err := WriteUint32(queryKey, height)
 
 	if err != nil {
@@ -308,7 +318,7 @@ func (c *ChainStore) RollbackBlock(blockHash Uint256) error {
 func (c *ChainStore) GetHeader(hash Uint256) (*core.Header, error) {
 	var h = new(core.Header)
 
-	prefix := []byte{byte(DATA_Header)}
+	prefix := []byte{byte(common.DATA_Header)}
 	data, err := c.Get(append(prefix, hash.Bytes()...))
 	if err != nil {
 		//TODO: implement error process
@@ -339,7 +349,7 @@ func (c *ChainStore) PersistAsset(assetId Uint256, asset core.Asset) error {
 	// generate key
 	assetKey := bytes.NewBuffer(nil)
 	// add asset prefix.
-	assetKey.WriteByte(byte(ST_Info))
+	assetKey.WriteByte(byte(common.ST_Info))
 	// contact asset id
 	assetId.Serialize(assetKey)
 
@@ -355,7 +365,7 @@ func (c *ChainStore) GetAsset(hash Uint256) (*core.Asset, error) {
 	log.Debugf("GetAsset Hash: %s", hash.String())
 
 	asset := new(core.Asset)
-	prefix := []byte{byte(ST_Info)}
+	prefix := []byte{byte(common.ST_Info)}
 	data, err := c.Get(append(prefix, hash.Bytes()...))
 
 	log.Debugf("GetAsset Data: %s", data)
@@ -369,7 +379,7 @@ func (c *ChainStore) GetAsset(hash Uint256) (*core.Asset, error) {
 }
 
 func (c *ChainStore) PersistMainchainTx(mainchainTxHash Uint256) {
-	key := []byte{byte(IX_MainChain_Tx)}
+	key := []byte{byte(common.IX_MainChain_Tx)}
 	key = append(key, mainchainTxHash.Bytes()...)
 
 	// PUT VALUE
@@ -377,7 +387,7 @@ func (c *ChainStore) PersistMainchainTx(mainchainTxHash Uint256) {
 }
 
 func (c *ChainStore) GetMainchainTx(mainchainTxHash Uint256) (byte, error) {
-	key := []byte{byte(IX_MainChain_Tx)}
+	key := []byte{byte(common.IX_MainChain_Tx)}
 	data, err := c.Get(append(key, mainchainTxHash.Bytes()...))
 	if err != nil {
 		return ValueNone, err
@@ -386,8 +396,79 @@ func (c *ChainStore) GetMainchainTx(mainchainTxHash Uint256) (byte, error) {
 	return data[0], nil
 }
 
+func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCache *DBCache) error {
+	payloadDeploy := tx.Payload.(*core.PayloadDeploy)
+	codeHash := payloadDeploy.Code.CodeHash()
+	dbCache.GetOrAdd(common.ST_Contract, string(codeHash.Bytes()), &states.ContractState{
+		Code: payloadDeploy.Code,
+		Name: payloadDeploy.Name,
+		Version: payloadDeploy.CodeVersion,
+		Author: payloadDeploy.Author,
+		Email: payloadDeploy.Email,
+		Description: payloadDeploy.Description,
+		ProgramHash: payloadDeploy.ProgramHash,
+	})
+
+	//smartcontract, err := smartcontract.NewSmartContract(&smartcontract.Context{
+	//	Caller:  		payloadDeploy.ProgramHash,
+	//	StateMachine:   service.NewStateMachine(dbCache, NewDBCache(c)),
+	//	DBCache:        dbCache,
+	//	Code:           payloadDeploy.Code.Code,
+	//	Time:           big.NewInt(int64(b.Timestamp)),
+	//	BlockNumber:    big.NewInt(int64(b.Height)),
+	//	Gas:            Fixed64(0),//todo confirm this gas is set to PayloadDeploy
+	//})
+	//if err != nil {
+	//	//httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), DEPLOY_TRANSACTION, err)
+	//	return err
+	//}
+	//
+	//ret, err := smartcontract.DeployContract()
+	//if err != nil {
+	//	//httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), DEPLOY_TRANSACTION, err)
+	//	return err
+	//}
+	//
+	//hash, err := common.ToCodeHash(ret)
+	//if err != nil {
+	//	//httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), DEPLOY_TRANSACTION, err)
+	//	return err
+	//}
+	////httpwebsocket.PushResult(tx.Hash(), int64(Success), DEPLOY_TRANSACTION, BytesToHexString(BytesReverse(hash.Bytes())))
+	//dbCache.Commit()
+	return nil
+}
+
+func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCache *DBCache) error {
+	//payloadInvoke := tx.Payload.(*core.PayloadInvoke)
+	////contract, err := c.GetContract(payloadInvoke.CodeHash)
+	//if err != nil {
+	//	//httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), INVOKE_TRANSACTION, err)
+	//	return err
+	//}
+	//state, err := states.GetStateValue(common.ST_Contract, contract)
+	//if err != nil {
+	//	//httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), INVOKE_TRANSACTION, err)
+	//	return err
+	//}
+
+	//constractState := state.(*states.ContractState)
+	//stateMachine := service.NewStateMachine(dbCache, NewDBCache(c))
+	//smartcontract, err := smartcontract.NewSmartContract(&smartcontract.Context{
+	//	Caller:        payloadInvoke.ProgramHash,
+	//	StateMachine:  stateMachine,
+	//	DBCache:       dbCache,
+	//	CodeHash:      payloadInvoke.CodeHash,
+	//	Input:         payloadInvoke.Code,
+	//	SignableData:  tx,
+	//
+	//
+	//})
+	return nil
+}
+
 func (c *ChainStore) GetTransaction(txId Uint256) (*core.Transaction, uint32, error) {
-	key := append([]byte{byte(DATA_Transaction)}, txId.Bytes()...)
+	key := append([]byte{byte(common.DATA_Transaction)}, txId.Bytes()...)
 	value, err := c.Get(key)
 	if err != nil {
 		return nil, 0, err
@@ -432,7 +513,7 @@ func (c *ChainStore) PersistTransaction(tx *core.Transaction, height uint32) err
 	// generate key with DATA_Transaction prefix
 	key := new(bytes.Buffer)
 	// add transaction header prefix.
-	key.WriteByte(byte(DATA_Transaction))
+	key.WriteByte(byte(common.DATA_Transaction))
 	// get transaction hash
 	hash := tx.Hash()
 	if err := hash.Serialize(key); err != nil {
@@ -456,7 +537,7 @@ func (c *ChainStore) PersistTransaction(tx *core.Transaction, height uint32) err
 
 func (c *ChainStore) GetBlock(hash Uint256) (*core.Block, error) {
 	var b = new(core.Block)
-	prefix := []byte{byte(DATA_Header)}
+	prefix := []byte{byte(common.DATA_Header)}
 	bHash, err := c.Get(append(prefix, hash.Bytes()...))
 	if err != nil {
 		return nil, err
@@ -509,13 +590,14 @@ func (c *ChainStore) rollback(b *core.Block) error {
 
 func (c *ChainStore) persist(b *core.Block) error {
 	c.NewBatch()
+	dbCache := NewDBCache(c)
 	if err := c.PersistTrimmedBlock(b); err != nil {
 		return err
 	}
 	if err := c.PersistBlockHash(b); err != nil {
 		return err
 	}
-	if err := c.PersistTransactions(b); err != nil {
+	if err := c.PersistTransactions(b, dbCache); err != nil {
 		return err
 	}
 	if err := c.PersistUnspendUTXOs(b); err != nil {
@@ -603,7 +685,7 @@ func (c *ChainStore) GetUnspent(txid Uint256, index uint16) (*core.Output, error
 }
 
 func (c *ChainStore) ContainsUnspent(txid Uint256, index uint16) (bool, error) {
-	unspentPrefix := []byte{byte(IX_Unspent)}
+	unspentPrefix := []byte{byte(common.IX_Unspent)}
 	unspentValue, err := c.Get(append(unspentPrefix, txid.Bytes()...))
 
 	if err != nil {
@@ -643,7 +725,7 @@ func (c *ChainStore) GetHeight() uint32 {
 
 func (c *ChainStore) IsBlockInStore(hash Uint256) bool {
 	var b = new(core.Block)
-	prefix := []byte{byte(DATA_Header)}
+	prefix := []byte{byte(common.DATA_Header)}
 	log.Debug("Get block key: ", BytesToHexString(append(prefix, hash.Bytes()...)))
 	blockData, err := c.Get(append(prefix, hash.Bytes()...))
 	if err != nil {
@@ -675,7 +757,7 @@ func (c *ChainStore) IsBlockInStore(hash Uint256) bool {
 }
 
 func (c *ChainStore) GetUnspentElementFromProgramHash(programHash Uint168, assetid Uint256, height uint32) ([]*UTXO, error) {
-	prefix := []byte{byte(IX_Unspent_UTXO)}
+	prefix := []byte{byte(common.IX_Unspent_UTXO)}
 	prefix = append(prefix, programHash.Bytes()...)
 	prefix = append(prefix, assetid.Bytes()...)
 
@@ -711,7 +793,7 @@ func (c *ChainStore) GetUnspentElementFromProgramHash(programHash Uint168, asset
 func (c *ChainStore) GetUnspentFromProgramHash(programHash Uint168, assetid Uint256) ([]*UTXO, error) {
 	unspents := make([]*UTXO, 0)
 
-	key := []byte{byte(IX_Unspent_UTXO)}
+	key := []byte{byte(common.IX_Unspent_UTXO)}
 	key = append(key, programHash.Bytes()...)
 	key = append(key, assetid.Bytes()...)
 	iter := c.NewIterator(key)
@@ -740,7 +822,7 @@ func (c *ChainStore) GetUnspentFromProgramHash(programHash Uint168, assetid Uint
 func (c *ChainStore) GetUnspentsFromProgramHash(programHash Uint168) (map[Uint256][]*UTXO, error) {
 	uxtoUnspents := make(map[Uint256][]*UTXO)
 
-	prefix := []byte{byte(IX_Unspent_UTXO)}
+	prefix := []byte{byte(common.IX_Unspent_UTXO)}
 	key := append(prefix, programHash.Bytes()...)
 	iter := c.NewIterator(key)
 	for iter.Next() {
@@ -777,7 +859,7 @@ func (c *ChainStore) GetUnspentsFromProgramHash(programHash Uint168) (map[Uint25
 }
 
 func (c *ChainStore) PersistUnspentWithProgramHash(programHash Uint168, assetid Uint256, height uint32, unspents []*UTXO) error {
-	prefix := []byte{byte(IX_Unspent_UTXO)}
+	prefix := []byte{byte(common.IX_Unspent_UTXO)}
 	prefix = append(prefix, programHash.Bytes()...)
 	prefix = append(prefix, assetid.Bytes()...)
 	key := bytes.NewBuffer(prefix)
@@ -806,7 +888,7 @@ func (c *ChainStore) PersistUnspentWithProgramHash(programHash Uint168, assetid 
 func (c *ChainStore) GetAssets() map[Uint256]*core.Asset {
 	assets := make(map[Uint256]*core.Asset)
 
-	iter := c.NewIterator([]byte{byte(ST_Info)})
+	iter := c.NewIterator([]byte{byte(common.ST_Info)})
 	for iter.Next() {
 		rk := bytes.NewReader(iter.Key())
 
@@ -824,4 +906,13 @@ func (c *ChainStore) GetAssets() map[Uint256]*core.Asset {
 	}
 
 	return assets
+}
+
+func (c *ChainStore) GetContract(codeHash Uint168) ([]byte, error) {
+	prefix := []byte{byte(common.ST_Contract)}
+	bData, err_get := c.Get(append(prefix, codeHash.Bytes()...))
+	if err_get != nil {
+		return nil, err_get
+	}
+	return bData, nil
 }

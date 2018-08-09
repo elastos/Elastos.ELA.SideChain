@@ -2,6 +2,7 @@ package types
 
 import (
 	"math/big"
+	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
 )
 
 type StackItem interface {
@@ -9,6 +10,6 @@ type StackItem interface {
 	GetBigInteger() *big.Int
 	GetBoolean() bool
 	GetByteArray() []byte
-	GetInterface()
+	GetInterface() interfaces.IGeneralInterface
 	GetArray() []StackItem
 }

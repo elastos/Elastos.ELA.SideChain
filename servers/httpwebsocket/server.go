@@ -21,7 +21,7 @@ import (
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/pborman/uuid"
 	"github.com/gorilla/websocket"
-)
+	)
 
 var instance *WebSocketServer
 
@@ -257,6 +257,22 @@ func SendBlock2WSclient(v interface{}) {
 		go func() {
 			instance.PushResult("sendblocktransactions", v)
 		}()
+	}
+}
+
+func PushResult(txHash Uint256, errcode int64, action string, result interface{}) {
+	if instance != nil {
+		resp := ResponsePack(Success, result)
+		resp["Error"] = errcode
+		resp["Action"] = action
+		resp["Desc"] = ErrMap[ErrCode(errcode)]
+
+		data, err := json.Marshal(resp)
+		if err != nil {
+			log.Error("Websocket PushResult:", err)
+			return
+		}
+		instance.broadcast(data)
 	}
 }
 

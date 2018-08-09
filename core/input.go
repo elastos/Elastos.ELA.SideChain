@@ -49,3 +49,9 @@ func (o Input) String() string {
 		"sequence: " + fmt.Sprint(o.Sequence) + "\n\t\t" +
 		"}"
 }
+
+func (o Input) Bytes() []byte {
+	buf := new(bytes.Buffer)
+	o.Serialize(buf)
+	return buf.Bytes()
+}
