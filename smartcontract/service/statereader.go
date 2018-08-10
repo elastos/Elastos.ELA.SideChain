@@ -8,7 +8,6 @@ import (
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
 
 	"github.com/elastos/Elastos.ELA.SideChain/vm"
-	"github.com/elastos/Elastos.ELA.SideChain/smartcontract"
 	"github.com/elastos/Elastos.ELA.SideChain/contract"
 	common2 "github.com/elastos/Elastos.ELA.SideChain/common"
 	"github.com/elastos/Elastos.ELA.SideChain/blockchain"
@@ -28,7 +27,7 @@ func NewStateReader() *StateReader {
 }
 
 func (s *StateReader) Register(methodName string, handler func(engine *vm.ExecutionEngine) (bool, error)) bool {
-	if _,ok := s.serviceMap[methodName]; ok {
+	if _, ok := s.serviceMap[methodName]; ok {
 		return false
 	}
 	s.serviceMap[methodName] = handler
@@ -48,12 +47,13 @@ func (s *StateReader) RuntimeNotify(e *vm.ExecutionEngine) (bool, error) {
 	return true, nil
 }
 
-func (s *StateReader) RuntimeLog(e *vm.ExecutionEngine) (bool, error)  {
+func (s *StateReader) RuntimeLog(e *vm.ExecutionEngine) (bool, error) {
 	return true, nil
 }
 
-func (s * StateReader) CheckWitnessHash(engine *vm.ExecutionEngine, programHash common.Uint168) (bool, error)  {
-	hashForVerify, err := engine.GetDataContainer().(smartcontract.SignableData).GetProgramHashes()
+func (s *StateReader) CheckWitnessHash(engine *vm.ExecutionEngine, programHash common.Uint168) (bool, error) {
+	tx := engine.GetDataContainer().(*core.Transaction)
+	hashForVerify, err := blockchain.GetTxProgramHashes(tx)
 	if err != nil {
 		return false, err
 	}
@@ -77,13 +77,13 @@ func (s *StateReader) RuntimeCheckWitness(e *vm.ExecutionEngine) (bool, error) {
 	var (
 		result bool
 		err    error
-		)
+	)
 	if len(data) == 21 {
 		program, err := common.Uint168FromBytes(data)
 		if err != nil {
 			return false, err
 		}
-		result,err = s.CheckWitnessHash(e, *program)
+		result, err = s.CheckWitnessHash(e, *program)
 	} else if len(data) == 33 {
 		publickKey, err := crypto.DecodePoint(data)
 		if err != nil {
@@ -111,7 +111,7 @@ func (s *StateReader) BlockChainGetHeight(e *vm.ExecutionEngine) (bool, error) {
 func (s *StateReader) BlockChainGetHeader(e *vm.ExecutionEngine) (bool, error) {
 	var (
 		header *core.Header
-		err error
+		err    error
 	)
 	data := vm.PopByteArray(e)
 	l := len(data)
@@ -145,7 +145,7 @@ func (s *StateReader) BlockChainGetBlock(e *vm.ExecutionEngine) (bool, error) {
 	data := vm.PopByteArray(e)
 	var (
 		block *core.Block
-		err error
+		err   error
 	)
 	l := len(data)
 	if l <= 5 {
@@ -214,7 +214,7 @@ func (s *StateReader) HeaderGetHash(e *vm.ExecutionEngine) (bool, error) {
 	return true, nil
 }
 
-func (s *StateReader) HeaderGetVersion(e *vm.ExecutionEngine) (bool, error)  {
+func (s *StateReader) HeaderGetVersion(e *vm.ExecutionEngine) (bool, error) {
 	d := vm.PopInteropInterface(e)
 	if d == nil {
 		return false, errors.New("Get header error in function headergetversion")
@@ -271,7 +271,7 @@ func (s *StateReader) BlockGetTransactions(e *vm.ExecutionEngine) (bool, error) 
 	}
 	transactions := d.(*core.Block).Transactions
 	list := make([]types.GeneralInterface, 0)
-	for _,v := range transactions {
+	for _, v := range transactions {
 		list = append(list, *types.NewGeneralInterface(v))
 	}
 	vm.PushData(e, list)
@@ -492,7 +492,7 @@ func (s *StateReader) AssetGetOwner(e *vm.ExecutionEngine) (bool, error) {
 		return false, errors.New("Get AssetState error in function AssetGetOwner")
 	}
 	assetState := d.(*states.AssetState)
-	owner,err := assetState.Owner.EncodePoint(true)
+	owner, err := assetState.Owner.EncodePoint(true)
 	if err != nil {
 		return false, err
 	}
