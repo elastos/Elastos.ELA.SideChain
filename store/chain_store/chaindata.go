@@ -317,7 +317,7 @@ func (c *ChainStore) PersistTransactions(b *core.Block, dbCache *DBCache) error 
 
 		}
 		if txn.TxType == core.Invoke {
-
+			c.PersistInvokeTx(b, txn, dbCache)
 		}
 	}
 	return nil

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/elastos/Elastos.ELA.SideChain/core"
+	"github.com/elastos/Elastos.ELA.SideChain/store/leveldb"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
 )
@@ -14,7 +15,8 @@ var mainchainTxHash common.Uint256
 
 func newTestChainStore() (*ChainStore, error) {
 	// TODO: read config file decide which db to use.
-	st, err := NewLevelDB("Chain_UnitTest")
+
+	st, err := leveldb.NewLevelDB("Chain_UnitTest")
 	if err != nil {
 		return nil, err
 	}

@@ -10,9 +10,9 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/service"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/types"
+	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/storage"
 	"github.com/elastos/Elastos.ELA.SideChain/core"
 	"github.com/elastos/Elastos.ELA.SideChain/servers"
-	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/storage"
 	. "github.com/elastos/Elastos.ELA.SideChain/common"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
@@ -72,6 +72,14 @@ func (sc *SmartContract) DeployContract() ([]byte, error) {
 	return sc.Engine.Create(sc.Caller, sc.Code)
 }
 
+func (sc *SmartContract) InvokeContract() (interface{}, error) {
+	_, err := sc.Engine.Call(sc.Caller, sc.CodeHash, sc.Input)
+	if err != nil {
+		return nil, err
+	}
+	return sc.InvokeResult()
+}
+
 func (sc *SmartContract) InvokeResult() (interface{}, error) {
 	engine := sc.Engine.(*vm.ExecutionEngine)
 	if engine.GetEvaluationStack().Count() > 0 && vm.Peek(engine) != nil {
@@ -99,7 +107,7 @@ func (sc *SmartContract) InvokeResult() (interface{}, error) {
 				return data.GetBigInteger(), nil
 			case *types.ByteArray:
 				return BytesToInt(data.GetByteArray()), nil
-			case *types.StackItem:
+			case *types.GeneralInterface:
 				interop := data.GetInterface()
 				switch interop.(type) {
 				case *core.Header:

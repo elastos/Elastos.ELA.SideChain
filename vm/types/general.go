@@ -15,12 +15,12 @@ func NewGeneralInterface(value interfaces.IGeneralInterface) *GeneralInterface {
 	return &ii
 }
 
-func (ii *GeneralInterface) Equals(other GeneralInterface) bool {
-	return ii.object == other.object
+func (ii *GeneralInterface) Equals(other StackItem) bool {
+	return ii.object == other.(interfaces.IGeneralInterface)
 }
 
-func (ii *GeneralInterface) GetBigInteger() big.Int {
-	return big.Int{}
+func (ii *GeneralInterface) GetBigInteger() *big.Int {
+	return big.NewInt(0)
 }
 
 func (ii *GeneralInterface) GetBoolean() bool {
@@ -38,6 +38,6 @@ func (ii *GeneralInterface) GetInterface() interfaces.IGeneralInterface {
 	return ii.object
 }
 
-func (ii *GeneralInterface) GetArray() []interfaces.IGeneralInterface {
-	return []interfaces.IGeneralInterface{}
+func (ii *GeneralInterface) GetArray() []StackItem {
+	return []StackItem{}
 }
