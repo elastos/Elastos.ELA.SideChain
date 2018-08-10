@@ -1,6 +1,9 @@
 package vm
 
-import "github.com/elastos/Elastos.ELA.SideChain/vm/utils"
+import (
+	"github.com/elastos/Elastos.ELA.SideChain/vm/utils"
+	"github.com/elastos/Elastos.ELA.SideChain/common"
+)
 
 type ExecutionContext struct {
 	Script             []byte
@@ -8,6 +11,7 @@ type ExecutionContext struct {
 	PushOnly           bool
 	BreakPoints        []uint
 	InstructionPointer int
+	CodeHash           []byte
 }
 
 func NewExecutionContext(script []byte, pushOnly bool, breakPoints []uint) *ExecutionContext {
@@ -18,6 +22,17 @@ func NewExecutionContext(script []byte, pushOnly bool, breakPoints []uint) *Exec
 	executionContext.BreakPoints = breakPoints
 	executionContext.InstructionPointer = executionContext.OpReader.Position()
 	return &executionContext
+}
+
+func (ec* ExecutionContext) GetCodeHash() []byte {
+	if ec.CodeHash == nil {
+		hash, err := common.ToCodeHash(ec.Script)
+		if err != nil {
+			return nil
+		}
+		ec.CodeHash = hash.Bytes()
+	}
+	return ec.CodeHash
 }
 
 func (ec *ExecutionContext) NextInstruction() OpCode {
