@@ -58,6 +58,7 @@ func (s *StateReader) CheckWitnessHash(engine *vm.ExecutionEngine, programHash c
 		return false, err
 	}
 	return contains(hashForVerify, programHash), nil
+
 }
 
 func (s *StateReader) CheckWitnessPublicKey(engine *vm.ExecutionEngine, publicKey *crypto.PublicKey) (bool, error) {
@@ -97,6 +98,7 @@ func (s *StateReader) RuntimeCheckWitness(e *vm.ExecutionEngine) (bool, error) {
 		return false, err
 	}
 	vm.PushData(e, result)
+	return true, nil
 }
 
 func (s *StateReader) BlockChainGetHeight(e *vm.ExecutionEngine) (bool, error) {

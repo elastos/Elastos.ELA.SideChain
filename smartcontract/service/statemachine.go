@@ -3,7 +3,7 @@ package service
 import (
 	"github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/storage"
-	)
+)
 
 type StateMachine struct {
 	*StateReader
