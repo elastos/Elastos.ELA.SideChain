@@ -12,7 +12,6 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/events"
 	"github.com/elastos/Elastos.ELA.SideChain/log"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
-	"github.com/elastos/Elastos.ELA.SideChain/store"
 	"github.com/elastos/Elastos.ELA.SideChain/blockchain"
 	"github.com/elastos/Elastos.ELA.SideChain/store/leveldb"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract"
@@ -23,7 +22,7 @@ import (
 	. "github.com/elastos/Elastos.ELA.SideChain/errors"
 
 	. "github.com/elastos/Elastos.ELA.Utility/common"
-)
+	)
 
 const ValueNone = 0
 const ValueExist = 1
@@ -50,7 +49,7 @@ type persistBlockTask struct {
 }
 
 type ChainStore struct {
-	store.IStore
+	IStore
 
 	taskCh chan persistTask
 	quit   chan chan bool
@@ -401,7 +400,10 @@ func (c *ChainStore) GetMainchainTx(mainchainTxHash Uint256) (byte, error) {
 }
 
 func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCache *DBCache) error {
-	payloadDeploy := tx.Payload.(*core.PayloadDeploy)
+	payloadDeploy, ok := tx.Payload.(*core.PayloadDeploy)
+	if !ok {
+		return errors.New("invalid deploy payload")
+	}
 	codeHash := payloadDeploy.Code.CodeHash()
 	dbCache.GetOrAdd(ST_Contract, string(codeHash.Bytes()), &states.ContractState{
 		Code:        payloadDeploy.Code,
@@ -440,6 +442,10 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 	}
 	httpwebsocket.PushResult(tx.Hash(), int64(Success), DEPLOY_TRANSACTION, BytesToHexString(BytesReverse(hash.Bytes())))
 	dbCache.Commit()
+
+	log.Info("deploy tx code:", BytesToHexString(ret))
+	log.Info("deploy tx Hash11:", BytesReverse(hash.Bytes()))
+	log.Info("deploy tx Hash22:", BytesToHexString(BytesReverse(hash.Bytes())))
 	return nil
 }
 
