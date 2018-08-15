@@ -440,17 +440,17 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 		httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), DEPLOY_TRANSACTION, err)
 		return err
 	}
-	httpwebsocket.PushResult(tx.Hash(), int64(Success), DEPLOY_TRANSACTION, BytesToHexString(BytesReverse(hash.Bytes())))
+	httpwebsocket.PushResult(tx.Hash(), int64(Success), DEPLOY_TRANSACTION, BytesToHexString(hash.Bytes()))
 	dbCache.Commit()
 
 	log.Info("deploy tx code:", BytesToHexString(ret))
-	log.Info("deploy tx Hash11:", BytesReverse(hash.Bytes()))
-	log.Info("deploy tx Hash22:", BytesToHexString(BytesReverse(hash.Bytes())))
+	log.Info("deploy tx Hash:", BytesToHexString(hash.Bytes()))
 	return nil
 }
 
 func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCache *DBCache) error {
 	payloadInvoke := tx.Payload.(*core.PayloadInvoke)
+	log.Info("payloadInvoke.CodeHash:",payloadInvoke.CodeHash)
 	contract, err := c.GetContract(payloadInvoke.CodeHash)
 	if err != nil {
 		httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), INVOKE_TRANSACTION, err)
@@ -463,13 +463,14 @@ func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCach
 	}
 
 	constractState := state.(*states.ContractState)
+	log.Info("constractState.code=", BytesToHexString(constractState.Code.Code))
 	stateMachine := service.NewStateMachine(dbCache, NewDBCache(c))
 	smartcontract, err := smartcontract.NewSmartContract(&smartcontract.Context{
 		Caller:         payloadInvoke.ProgramHash,
 		StateMachine:   stateMachine,
 		DBCache:        dbCache,
 		CodeHash:       payloadInvoke.CodeHash,
-		Input:          payloadInvoke.Code,
+		Input:          constractState.Code.Code,//payloadInvoke.Code,
 		SignableData:   tx,
 		CacheCodeTable: NewCacheCodeTable(dbCache),
 		Time:           big.NewInt(int64(b.Timestamp)),
@@ -483,6 +484,7 @@ func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCach
 	}
 
 	ret, err := smartcontract.InvokeContract()
+	log.Info("InvokeContract ret=", ret)
 	stateMachine.CloneCache.Commit()
 	httpwebsocket.PushResult(tx.Hash(), int64(Success), INVOKE_TRANSACTION, ret)
 	return nil

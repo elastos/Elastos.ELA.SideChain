@@ -54,8 +54,8 @@ func NewSmartContract(context *Context) (*SmartContract, error) {
 		new(vm.CryptoECDsa),
 		vm.MAXSTEPS,
 		context.CacheCodeTable,
-		nil,
-		0,
+		context.StateMachine,
+		context.Gas,
 	)
 	return &SmartContract{
 		Engine:         e,

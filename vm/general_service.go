@@ -1,8 +1,8 @@
 package vm
 
-type IInteropService interface {
-	Register(method string, handler func(*ExecutionEngine) (bool, error)) bool
-	GetServiceMap() map[string]func(*ExecutionEngine) (bool, error)
+type IGeneralService interface {
+	Register(method string, handler func(*ExecutionEngine) bool) bool
+	GetServiceMap() map[string]func(*ExecutionEngine) bool
 }
 
 type GeneralService struct {
@@ -27,7 +27,15 @@ func (is *GeneralService) Register(method string, handler func(*ExecutionEngine)
 	return true
 }
 
-func (i *GeneralService) GetServiceMap() map[string]func(*ExecutionEngine) (bool) {
+func (is *GeneralService) MergeMap(dictionary map[string]func(engine *ExecutionEngine) bool) {
+	for k, v := range dictionary {
+		if _, ok := is.dictionary[k]; !ok {
+			is.dictionary[k] = v
+		}
+	}
+}
+
+func (i *GeneralService) GetServiceMap() map[string]func(*ExecutionEngine) bool {
 	return i.dictionary
 }
 

@@ -8,12 +8,13 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/utils"
 	"github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.SideChain/log"
 )
 
 const MAXSTEPS int = 1200
 
 func NewExecutionEngine(container interfaces.IDataContainer, crypto interfaces.ICrypto, maxSteps int,
-						table interfaces.IScriptTable, service *GeneralService, gas common.Fixed64) *ExecutionEngine {
+						table interfaces.IScriptTable, service IGeneralService, gas common.Fixed64) *ExecutionEngine {
 	var engine ExecutionEngine
 
 	engine.crypto = crypto
@@ -34,7 +35,7 @@ func NewExecutionEngine(container interfaces.IDataContainer, crypto interfaces.I
 
 	engine.service = NewGeneralService()
 	if service != nil {
-		engine.service = service
+		engine.service.MergeMap(service.GetServiceMap())
 	}
 
 
@@ -153,6 +154,7 @@ func (e *ExecutionEngine) StepInto() {
 			return
 		}
 		e.opCount++
+		log.Info("opCode=", opCode)
 		state, err := e.ExecuteOp(OpCode(opCode), context)
 		switch state {
 		case VMState(HALT):
