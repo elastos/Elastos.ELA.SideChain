@@ -1,5 +1,7 @@
 package vm
 
+import "github.com/elastos/Elastos.ELA.SideChain/vm/types"
+
 func opArraySize(e *ExecutionEngine) (VMState, error) {
 	if e.evaluationStack.Count() < 1 {
 		return FAULT, nil
@@ -59,7 +61,11 @@ func opPickItem(e *ExecutionEngine) (VMState, error) {
 	if index < 0 {
 		return FAULT, nil
 	}
-	items := AssertStackItem(e.evaluationStack.Pop()).GetArray()
+	item := e.evaluationStack.Pop()
+	if item == nil {
+		return FAULT, nil
+	}
+	items := AssertStackItem(item).GetArray()
 	if index >= len(items) {
 		return FAULT, nil
 	}
@@ -67,5 +73,29 @@ func opPickItem(e *ExecutionEngine) (VMState, error) {
 	if err != nil {
 		return FAULT, err
 	}
+	return NONE, nil
+}
+
+func opSetItem(e *ExecutionEngine) (VMState, error) {
+	newItem := PopStackItem(e)
+	index := PopInt(e)
+	itemArr := PopStackItem(e)
+	if _, ok := itemArr.(*types.Array); ok {
+		items := itemArr.GetArray()
+		items[index] = newItem
+	}else {
+		items := itemArr.GetByteArray()
+		items[index] = newItem.GetByteArray()[0]
+	}
+	return NONE, nil
+}
+
+func opNewArray(e *ExecutionEngine) (VMState, error) {
+	count := PopInt(e)
+	items := NewStackItems();
+	for i := 0; i < count; i++ {
+		items = append(items, types.NewBoolean(false))
+	}
+	PushData(e, items)
 	return NONE, nil
 }

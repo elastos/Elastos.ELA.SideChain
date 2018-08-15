@@ -116,5 +116,7 @@ var (
 		PACK:      {PACK, "PACK", opPack},
 		UNPACK:    {UNPACK, "UNPACK", opUnpack},
 		PICKITEM:  {PICKITEM, "PICKITEM", opPickItem},
+		SETITEM:   {Opcode: SETITEM, Name: "SETITEM", Exec: opSetItem},
+		NEWARRAY:  {Opcode: NEWARRAY, Name: "NEWARRAY", Exec: opNewArray},
 	}
 )
