@@ -8,7 +8,6 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/utils"
 	"github.com/elastos/Elastos.ELA.Utility/common"
-	"github.com/elastos/Elastos.ELA.SideChain/log"
 )
 
 const MAXSTEPS int = 1200
@@ -133,38 +132,47 @@ func (e *ExecutionEngine) Execute() {
 		if e.state == FAULT || e.state == HALT || e.state == BREAK {
 			break
 		}
-		e.StepInto()
+		err := e.StepInto()
+		if err != nil {
+			break;
+		}
 	}
 }
 
-func (e *ExecutionEngine) StepInto() {
+func (e *ExecutionEngine) StepInto() error {
 	if e.invocationStack.Count() == 0 {
 		e.state = VMState(e.state | HALT)
 	}
 	if e.state&HALT == HALT || e.state&FAULT == FAULT {
-		return
+		return nil
 	}
-	context := AssertExecutionContext(e.invocationStack.Pop())
-	if context.InstructionPointer >= len(context.Script) {
-		e.opCode = RET
-	}
-	for {
-		opCode, err := context.OpReader.ReadByte()
+
+	context := AssertExecutionContext(e.invocationStack.Peek(0))
+
+	var opCode OpCode
+
+	if context.GetInstructionPointer() >= len(context.Script) {
+		opCode = RET
+	} else {
+		op, err :=  context.OpReader.ReadByte()
 		if err == io.EOF && opCode == 0 {
-			return
+			e.state = FAULT
+			return err
 		}
-		e.opCount++
-		log.Info("opCode=", opCode)
-		state, err := e.ExecuteOp(OpCode(opCode), context)
-		switch state {
-		case VMState(HALT):
-			e.state = VMState(e.state | HALT)
-			return
-		case VMState(FAULT):
-			e.state = VMState(e.state | FAULT)
-			return
-		}
+		opCode = OpCode(op)
 	}
+
+	e.opCount++
+	state, err := e.ExecuteOp(OpCode(opCode), context)
+	switch state {
+	case VMState(HALT):
+		e.state = VMState(e.state | HALT)
+		return err
+	case VMState(FAULT):
+		e.state = VMState(e.state | FAULT)
+		return err
+	}
+	return nil
 }
 
 func (e *ExecutionEngine) ExecuteOp(opCode OpCode, context *ExecutionContext) (VMState, error) {

@@ -50,7 +50,7 @@ func (r *VmReader) ReadInt16() int16 {
 	b := r.ReadBytes(2)
 	bytesBuffer := bytes.NewBuffer(b)
 	var vi int16
-	binary.Read(bytesBuffer, binary.BigEndian, &vi)
+	binary.Read(bytesBuffer, binary.LittleEndian, &vi)
 	return vi
 
 }
@@ -59,7 +59,7 @@ func (r *VmReader) ReadInt32() int32 {
 	b := r.ReadBytes(4)
 	bytesBuffer := bytes.NewBuffer(b)
 	var vi int32
-	binary.Read(bytesBuffer, binary.BigEndian, &vi)
+	binary.Read(bytesBuffer, binary.LittleEndian, &vi)
 	return vi
 }
 

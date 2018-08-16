@@ -348,6 +348,18 @@ func NewStackItem(data interface{}) (types.StackItem, error) {
 		stackItem = types.NewByteArray(data.([]byte))
 	case []types.StackItem:
 		stackItem = types.NewArray(data.([]types.StackItem))
+	case types.StackItem:
+		stackItem = data.(types.StackItem)
+	case interfaces.IGeneralInterface:
+		stackItem = types.NewGeneralInterface(data.(interfaces.IGeneralInterface))
+	case *types.ByteArray:
+		stackItem = data.(*types.ByteArray)
+	case *types.Integer:
+		stackItem = data.(*types.Integer)
+	case *types.Array:
+		stackItem = data.(*types.Array)
+	case *types.Boolean:
+		stackItem = data.(*types.Boolean)
 	default:
 		err = errors.ErrBadType
 	}
