@@ -1,8 +1,6 @@
 package vm
 
 import (
-	"io"
-
 	"github.com/elastos/Elastos.ELA.SideChain/vm/errors"
 )
 
@@ -43,17 +41,7 @@ func opCall(e *ExecutionEngine) (VMState, error) {
 }
 
 func opRet(e *ExecutionEngine) (VMState, error) {
-	if e.invocationStack.Count() < 2 {
-		return FAULT, nil
-	}
 	e.invocationStack.Pop()
-	x := AssertStackItem(e.invocationStack.Pop())
-	position := x.GetBigInteger().Int64()
-	if position < 0 || position > int64(e.context.OpReader.Length()) {
-		return FAULT, nil
-	}
-	e.invocationStack.Push(x)
-	e.context.OpReader.Seek(position, io.SeekStart)
 	return NONE, nil
 }
 
