@@ -41,6 +41,7 @@ var (
 		CALL:     {CALL, "CALL", opCall},
 		RET:      {RET, "RET", opRet},
 		APPCALL:  {APPCALL, "APPCALL", opAppCall},
+		TAILCALL: {Opcode: TAILCALL, Name: "TAILCALL", Exec: opAppCall},
 		SYSCALL:  {SYSCALL, "SYSCALL", opSysCall},
 
 		//Stack ops

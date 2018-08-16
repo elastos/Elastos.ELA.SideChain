@@ -9,9 +9,6 @@ func opToAltStack(e *ExecutionEngine) (VMState, error) {
 }
 
 func opFromAltStack(e *ExecutionEngine) (VMState, error) {
-	if e.evaluationStack.Count() < 1 {
-		return FAULT, nil
-	}
 	e.evaluationStack.Push(e.altStack.Pop())
 	return NONE, nil
 }
@@ -110,20 +107,9 @@ func opPick(e *ExecutionEngine) (VMState, error) {
 }
 
 func opRoll(e *ExecutionEngine) (VMState, error) {
-	if e.evaluationStack.Count() < 2 {
-		return FAULT, nil
-	}
-	n := int(AssertStackItem(e.evaluationStack.Pop()).GetBigInteger().Int64())
-	if n < 0 {
-		return FAULT, nil
-	}
-	if n == 0 {
-		return NONE, nil
-	}
-	if e.evaluationStack.Count() < n+1 {
-		return FAULT, nil
-	}
-	e.evaluationStack.Push(e.evaluationStack.Remove(n))
+	n := PopInt(e)
+	if n == 0 { return NONE, nil }
+	Push(e, e.evaluationStack.Remove(n))
 	return NONE, nil
 }
 
