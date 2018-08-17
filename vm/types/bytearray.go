@@ -3,6 +3,7 @@ package types
 import (
 	"math/big"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
+	"github.com/elastos/Elastos.ELA.Utility/common"
 )
 
 type ByteArray struct {
@@ -36,7 +37,7 @@ func (ba *ByteArray) Equals(other StackItem) bool {
 
 func (ba *ByteArray) GetBigInteger() *big.Int {
 	var bi big.Int
-	return bi.SetBytes(ba.value)
+	return bi.SetBytes(common.BytesReverse(ba.value))
 }
 
 func (ba *ByteArray) GetBoolean() bool{
