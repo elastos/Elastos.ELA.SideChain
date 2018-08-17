@@ -450,7 +450,6 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 
 func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCache *DBCache) error {
 	payloadInvoke := tx.Payload.(*core.PayloadInvoke)
-	log.Info("payloadInvoke.CodeHash:",payloadInvoke.CodeHash)
 	contract, err := c.GetContract(payloadInvoke.CodeHash)
 	if err != nil {
 		httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), INVOKE_TRANSACTION, err)
@@ -463,14 +462,13 @@ func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCach
 	}
 
 	constractState := state.(*states.ContractState)
-	log.Info("constractState.code=", BytesToHexString(constractState.Code.Code))
 	stateMachine := service.NewStateMachine(dbCache, NewDBCache(c))
 	smartcontract, err := smartcontract.NewSmartContract(&smartcontract.Context{
 		Caller:         payloadInvoke.ProgramHash,
 		StateMachine:   stateMachine,
 		DBCache:        dbCache,
 		CodeHash:       payloadInvoke.CodeHash,
-		Input:          constractState.Code.Code,//payloadInvoke.Code,
+		Input:          payloadInvoke.Code,
 		SignableData:   tx,
 		CacheCodeTable: NewCacheCodeTable(dbCache),
 		Time:           big.NewInt(int64(b.Timestamp)),

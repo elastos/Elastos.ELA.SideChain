@@ -8,9 +8,7 @@ func opCat(e *ExecutionEngine) (VMState, error) {
 	x1 := e.evaluationStack.Pop()
 	b1 := AssertStackItem(x1).GetByteArray()
 	b2 := AssertStackItem(x2).GetByteArray()
-	if len(b1) != len(b2) {
-		return FAULT, nil
-	}
+
 	r := ByteArrZip(b1, b2, CAT)
 	pushData(e, r)
 	return NONE, nil

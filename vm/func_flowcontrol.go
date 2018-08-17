@@ -54,6 +54,9 @@ func opAppCall(e *ExecutionEngine) (VMState, error) {
 	if script == nil {
 		return FAULT, nil
 	}
+	if e.opCode == TAILCALL {
+		e.invocationStack.Pop()
+	}
 	e.LoadScript(script, false)
 	return NONE, nil
 }
