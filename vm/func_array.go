@@ -1,6 +1,9 @@
 package vm
 
-import "github.com/elastos/Elastos.ELA.SideChain/vm/types"
+import (
+	"errors"
+	"github.com/elastos/Elastos.ELA.SideChain/vm/types"
+)
 
 func opArraySize(e *ExecutionEngine) (VMState, error) {
 	if e.evaluationStack.Count() < 1 {
@@ -54,36 +57,51 @@ func opUnpack(e *ExecutionEngine) (VMState, error) {
 }
 
 func opPickItem(e *ExecutionEngine) (VMState, error) {
-	if e.evaluationStack.Count() < 1 {
-		return FAULT, nil
-	}
-	index := int(AssertStackItem(e.evaluationStack.Pop()).GetBigInteger().Int64())
-	if index < 0 {
-		return FAULT, nil
-	}
-	item := e.evaluationStack.Pop()
-	if item == nil {
-		return FAULT, nil
-	}
-	items := AssertStackItem(item).GetArray()
-	if index >= len(items) {
-		return FAULT, nil
-	}
-	err := pushData(e, items[index])
-	if err != nil {
-		return FAULT, err
+	//if e.evaluationStack.Count() < 1 {
+	//	return FAULT, nil
+	//}
+	//index := int(AssertStackItem(e.evaluationStack.Pop()).GetBigInteger().Int64())
+	//if index < 0 {
+	//	return FAULT, nil
+	//}
+	//item := e.evaluationStack.Pop()
+	//if item == nil {
+	//	return FAULT, nil
+	//}
+	//items := AssertStackItem(item).GetArray()
+	//if index >= len(items) {
+	//	return FAULT, nil
+	//}
+	//err := pushData(e, items[index])
+	//if err != nil {
+	//	return FAULT, err
+	//}
+	//return NONE, nil
+
+	index := PopInt(e)
+	itemArr := PopStackItem(e)
+	if _, ok := itemArr.(*types.Array); ok {
+		items := itemArr.GetArray()
+		PushData(e, items[index])
+	} else {
+		//put bytearray, if not the data is error. some publickey
+		items := itemArr.GetByteArray()
+		PushData(e, items)
 	}
 	return NONE, nil
 }
 
 func opSetItem(e *ExecutionEngine) (VMState, error) {
+	if e.evaluationStack.Count() < 3 {
+		return FAULT, errors.New("evaluationStack error")
+	}
 	newItem := PopStackItem(e)
 	index := PopInt(e)
 	itemArr := PopStackItem(e)
 	if _, ok := itemArr.(*types.Array); ok {
 		items := itemArr.GetArray()
 		items[index] = newItem
-	}else {
+	} else {
 		items := itemArr.GetByteArray()
 		items[index] = newItem.GetByteArray()[0]
 	}

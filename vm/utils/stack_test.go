@@ -44,3 +44,44 @@ func TestRandomAccessStack(t *testing.T) {
 	}
 
 }
+
+func TestRandomAccessStack_CopyTo(t *testing.T) {
+	var stack = NewRandAccessStack()
+	for i := 0; i < 10; i++ {
+		stack.Push(i)
+	}
+
+	var toStack = NewRandAccessStack()
+	stack.CopyTo(toStack, -1);
+	for i := 0; i < 10; i++ {
+		assertEqual(t, stack.Peek(i), toStack.Peek(i))
+	}
+
+	toStack.Clear();
+	assertEqual(t, toStack.Count(), 0)
+
+	stack.CopyTo(toStack, 0)
+	assertEqual(t, toStack.Count(), 0)
+
+	stack.CopyTo(toStack, 0)
+	for i := 0; i < toStack.Count(); i++ {
+		fmt.Print(toStack.Peek(i))
+	}
+}
+
+func TestRandomAccessStack_Swap(t *testing.T) {
+	var stack = NewRandAccessStack()
+	for i := 0; i < 10; i++ {
+		stack.Push(i)
+	}
+	for i := 0; i < stack.Count(); i++ {
+		fmt.Print(stack.Peek(i))
+	}
+	fmt.Println("\n")
+	stack.Swap(1,5)
+
+	for i := 0; i < stack.Count(); i++ {
+		fmt.Print(stack.Peek(i))
+	}
+
+}

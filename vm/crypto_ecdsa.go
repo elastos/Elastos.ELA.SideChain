@@ -4,13 +4,15 @@ import (
 	"errors"
 
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain/common"
 )
 
 type CryptoECDsa struct {
 }
 
 func (c *CryptoECDsa) Hash168(data []byte) []byte {
-	return []byte{}
+	temp, _ := common.ToCodeHash(data)
+	return  temp.Bytes()
 }
 
 func (c *CryptoECDsa) Hash256(data []byte) []byte {

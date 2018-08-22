@@ -4,9 +4,11 @@ import (
 	"io"
 	_ "math/big"
 	_ "sort"
-
+	
 	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/utils"
+	"github.com/elastos/Elastos.ELA.SideChain/vm/errors"
+
 	"github.com/elastos/Elastos.ELA.Utility/common"
 )
 
@@ -122,11 +124,13 @@ func (e *ExecutionEngine) EntryScript() []byte {
 	return nil
 }
 
-func (e *ExecutionEngine) LoadScript(script []byte, pushOnly bool) {
-	e.invocationStack.Push(NewExecutionContext(script, pushOnly, nil))
+func (e *ExecutionEngine) LoadScript(script []byte, pushOnly bool) *ExecutionContext {
+	content := NewExecutionContext(script, pushOnly, nil)
+	e.invocationStack.Push(content)
+	return content
 }
 
-func (e *ExecutionEngine) Execute() {
+func (e *ExecutionEngine) Execute() error {
 	e.state = e.state & (^BREAK)
 	for {
 		if e.state == FAULT || e.state == HALT || e.state == BREAK {
@@ -134,9 +138,10 @@ func (e *ExecutionEngine) Execute() {
 		}
 		err := e.StepInto()
 		if err != nil {
-			break;
+			return err
 		}
 	}
+	return nil
 }
 
 func (e *ExecutionEngine) StepInto() error {
@@ -193,10 +198,10 @@ func (e *ExecutionEngine) ExecuteOp(opCode OpCode, context *ExecutionContext) (V
 	e.context = context
 	opExec := OpExecList[opCode]
 	if opExec.Exec == nil {
-		return FAULT, nil
+		return FAULT, errors.ErrNotSupportOpCode
 	}
 	state, err := opExec.Exec(e)
-	if err != nil {
+	if err != nil || HALT == state || FAULT == state {
 		return state, err
 	}
 	return NONE, nil

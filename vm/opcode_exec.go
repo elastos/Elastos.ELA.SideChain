@@ -117,7 +117,14 @@ var (
 		PACK:      {PACK, "PACK", opPack},
 		UNPACK:    {UNPACK, "UNPACK", opUnpack},
 		PICKITEM:  {PICKITEM, "PICKITEM", opPickItem},
-		SETITEM:   {Opcode: SETITEM, Name: "SETITEM", Exec: opSetItem},
-		NEWARRAY:  {Opcode: NEWARRAY, Name: "NEWARRAY", Exec: opNewArray},
+		SETITEM:   {SETITEM, "SETITEM", opSetItem},
+		NEWARRAY:  {NEWARRAY,"NEWARRAY",opNewArray},
+
+		//Stack isolation
+		CALL_I:    {CALL_I, "CALL_I", opCallI},
+		CALL_E:    {CALL_E, "CALL_E", opCallE},
+		CALL_ED:   {CALL_E, "CALL_E", opCallE},
+		CALL_ET:   {CALL_E, "CALL_E", opCallE},
+		CALL_EDT:  {CALL_E, "CALL_E", opCallE},
 	}
 )

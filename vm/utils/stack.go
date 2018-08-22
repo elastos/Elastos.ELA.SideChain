@@ -72,5 +72,23 @@ func (ras *RandomAccessStack) Pop() interface{} {
 }
 
 func (ras *RandomAccessStack) Swap(i, j int) {
-	ras.Element[i], ras.Element[j] = ras.Element[j], ras.Element[i]
+	//ras.Element[i], ras.Element[j] = ras.Element[j], ras.Element[i]
+	//todo if not use blow , result is not correct
+	l := len(ras.Element)
+	ras.Element[l - i - 1], ras.Element[l - j - 1] = ras.Element[l - j - 1], ras.Element[l - i - 1]
+}
+
+func (ras *RandomAccessStack) Clear()  {
+	ras.Element = make([]interface{}, 0)
+}
+
+func (ras *RandomAccessStack) CopyTo(toStack *RandomAccessStack, count int)  {
+	if count == 0 {
+		return
+	}
+	if count == -1 {
+		toStack.Element = append(toStack.Element, ras.Element...)
+	} else {
+		toStack.Element = append(toStack.Element, ras.Element[len(ras.Element) - count:]...)
+	}
 }
