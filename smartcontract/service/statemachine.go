@@ -231,6 +231,9 @@ func (s *StateMachine) CheckStorageContext(context *StorageContext) (bool, error
 
 func (s *StateMachine) StorageGet(engine *vm.ExecutionEngine) bool {
 	opInterface := vm.PopInteropInterface(engine)
+	if opInterface == nil {
+		return false;
+	}
 	context := opInterface.(*StorageContext)
 	if exist, err := s.CheckStorageContext(context); !exist {
 		fmt.Println(err)
@@ -239,8 +242,7 @@ func (s *StateMachine) StorageGet(engine *vm.ExecutionEngine) bool {
 	key := vm.PopByteArray(engine)
 	storageKey := states.NewStorageKey(context.codeHash, key)
 	item, err := s.CloneCache.TryGet(store.ST_Storage, storage.KeyToStr(storageKey))
-	if err != nil {
-		fmt.Println(err)
+	if err != nil && err.Error() != "leveldb: not found" {
 		return false
 	}
 	if item ==  nil {
@@ -253,6 +255,9 @@ func (s *StateMachine) StorageGet(engine *vm.ExecutionEngine) bool {
 
 func (s *StateMachine) StoragePut(engine *vm.ExecutionEngine) bool {
 	opInterface := vm.PopInteropInterface(engine)
+	if opInterface == nil {
+		return false
+	}
 	context := opInterface.(*StorageContext)
 	key := vm.PopByteArray(engine)
 	value := vm.PopByteArray(engine)

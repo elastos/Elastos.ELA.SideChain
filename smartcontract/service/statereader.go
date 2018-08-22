@@ -13,6 +13,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/core"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/types"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
+	"errors"
 )
 
 type StateReader struct {
@@ -107,6 +108,9 @@ func (s *StateReader) RuntimeLog(e *vm.ExecutionEngine) bool {
 }
 
 func (s *StateReader) CheckWitnessHash(engine *vm.ExecutionEngine, programHash common.Uint168) (bool, error) {
+	if engine.GetDataContainer() == nil {
+		return false, errors.New("CheckWitnessHash getDataContainer is null")
+	}
 	tx := engine.GetDataContainer().(*core.Transaction)
 	hashForVerify, err := blockchain.GetTxProgramHashes(tx)
 	if err != nil {

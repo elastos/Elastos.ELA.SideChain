@@ -121,5 +121,23 @@ const (
 	PICKITEM  = 0xC3
 	SETITEM   = 0xC4
 	NEWARRAY  = 0xC5
-	CLONE     = 0xC6
+
+	NEWSTRUCT = 0xC6
+
+	// Map
+	NEWMAP    = 0xC7
+	APPEND    = 0xC8
+	REVERSE   = 0xC9
+	REMOVE    = 0xCA
+	HASKEY    = 0xCB
+	KEYS      = 0xCC
+	VALUES    = 0xCD
+
+	//Stack isolation
+	CALL_I    = 0xE0
+	CALL_E 	  = 0xE1
+	CALL_ED   = 0xE2
+	CALL_ET   = 0xE3
+	CALL_EDT  = 0xE4
+
 )

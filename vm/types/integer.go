@@ -2,7 +2,10 @@ package types
 
 import (
 	"math/big"
+
 	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
+
+	"github.com/elastos/Elastos.ELA.Utility/common"
 )
 
 type Integer struct {
@@ -38,7 +41,7 @@ func (i *Integer) GetBoolean() bool {
 }
 
 func (i *Integer) GetByteArray() []byte{
-	return i.value.Bytes()
+	return common.BytesReverse(i.value.Bytes())
 }
 
 func (i *Integer) GetInterface() interfaces.IGeneralInterface {

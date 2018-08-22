@@ -1,6 +1,8 @@
 package vm
 
 import (
+	"fmt"
+
 	"github.com/elastos/Elastos.ELA.SideChain/vm/errors"
 )
 
@@ -71,4 +73,63 @@ func opSysCall(e *ExecutionEngine) (VMState, error) {
 	} else {
 		return FAULT, nil
 	}
+}
+
+func opCallI(e *ExecutionEngine) (VMState, error) {
+	rvcount, err := e.context.OpReader.ReadByte()
+	fmt.Println("rvCount=", rvcount)
+	if err != nil {
+		return FAULT, err
+	}
+	pcount, err := e.context.OpReader.ReadByte();
+	if err != nil {
+		return FAULT, err
+	}
+	if e.evaluationStack.Count() < int(pcount) {
+		return FAULT, nil
+	}
+	e.invocationStack.Push(e.context.Clone())
+	e.evaluationStack.CopyTo(e.evaluationStack, int(pcount))
+	e.context.SetInstructionPointer(e.context.GetInstructionPointer() + 2)
+	e.context = AssertExecutionContext(e.invocationStack.Peek(0))
+	e.opCode = JMP
+	opJmp(e)
+	return NONE, nil
+}
+
+func opCallE(e *ExecutionEngine) (VMState, error) {
+	//todo this function should test
+	if e.table == nil {
+		return FAULT, nil
+	}
+	rvcount, err := e.context.OpReader.ReadByte();
+	if err != nil {
+		return FAULT ,err
+	}
+	pcount, err := e.context.OpReader.ReadByte();
+	if err != nil {
+		return FAULT, err
+	}
+	if (e.evaluationStack.Count() < int(pcount)) {
+		return FAULT ,err
+	}
+	var script_hash []byte
+	if (e.opCode == CALL_ED || e.opCode == CALL_EDT) {
+		script_hash = PopByteArray(e)
+	} else {
+		script_hash = e.context.OpReader.ReadBytes(21)
+	}
+
+	script := e.table.GetScript(script_hash)
+	if script == nil {
+		return FAULT ,err
+	}
+	if (e.opCode == CALL_ET || e.opCode == CALL_EDT) {
+		e.invocationStack.Pop()
+	}
+
+	e.LoadScript(script, false)
+	fmt.Println("opCallE rvcount:", rvcount)
+
+	return NONE, nil
 }

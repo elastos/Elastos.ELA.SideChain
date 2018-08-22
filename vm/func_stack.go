@@ -30,7 +30,7 @@ func opXSwap(e *ExecutionEngine) (VMState, error) {
 		return FAULT, nil
 	}
 	n := int(AssertStackItem(e.evaluationStack.Pop()).GetBigInteger().Int64())
-	if n < 0 || n > e.evaluationStack.Count()-1 {
+	if n <= 0 || n > e.evaluationStack.Count()-1 {
 		return FAULT, nil
 	}
 	e.evaluationStack.Swap(0, n)
@@ -157,3 +157,4 @@ func pushData(e *ExecutionEngine, data interface{}) error {
 	}
 	return err
 }
+

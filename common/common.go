@@ -33,7 +33,8 @@ func ToCodeHash(code []byte) (common.Uint168, error) {
 	temp := sha256.Sum256(code)
 	md := ripemd160.New()
 	io.WriteString(md, string(temp[:]))
-	f := md.Sum([]byte{common.PrefixSmartContract})
+	//todo confirm this prefix
+	f := md.Sum([]byte{common.PrefixStandard})
 
 	hash ,err := common.Uint168FromBytes(f)
 	if err != nil {
