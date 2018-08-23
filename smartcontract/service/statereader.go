@@ -14,6 +14,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/vm/types"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
 	"errors"
+	"fmt"
 )
 
 type StateReader struct {
@@ -33,6 +34,7 @@ func NewStateReader() *StateReader {
 	stateReader.Register("Neo.Blockchain.GetHeader", stateReader.BlockChainGetHeader)
 	stateReader.Register("Neo.Blockchain.GetBlock", stateReader.BlockChainGetBlock)
 	stateReader.Register("Neo.Blockchain.GetTransaction", stateReader.BlockChainGetTransaction)
+	stateReader.Register("Neo.Blockchain.GetAccount", stateReader.BlockChainGetAccount)
 	stateReader.Register("Neo.Blockchain.GetAsset", stateReader.BlockChainGetAsset)
 
 	stateReader.Register("Neo.Header.GetHash", stateReader.HeaderGetHash)
@@ -248,6 +250,18 @@ func (s *StateReader) BlockChainGetTransaction(e *vm.ExecutionEngine) bool {
 		return false
 	}
 	vm.PushData(e, tx)
+	return true
+}
+
+func (s *StateReader) BlockChainGetAccount(e *vm.ExecutionEngine) bool {
+	d := vm.PopByteArray(e)
+	hash, err := common.Uint168FromBytes(d)
+	if err != nil {
+		return false
+	}
+
+	account, err := blockchain.DefaultLedger.Store.GetAccount(*hash)
+	vm.PushData(e, account)
 	return true
 }
 
@@ -518,31 +532,40 @@ func (s *StateReader) OutputGetCodeHash(e *vm.ExecutionEngine) bool {
 }
 
 func (s *StateReader) AccountGetCodeHash(e *vm.ExecutionEngine) bool {
-	//d := vm.PopInteropInterface(e)
-	//if d == nil {
-	//	return false, fmt.Errorf("%v", "Get AccountState error in function AccountGetCodeHash")
-	//}
-	//accountState := d.(*states.AccountState).ProgramHash
-	//vm.PushData(e, accountState.ToArray())
+	d := vm.PopInteropInterface(e)
+	if d == nil {
+		fmt.Println("Get AccountState error in function AccountGetCodeHash")
+		return false
+	}
+	accountState := d.(*states.AccountState).ProgramHash
+	vm.PushData(e, accountState.Bytes())
 	return true
 }
 
 func (s *StateReader) AccountGetBalance(e *vm.ExecutionEngine) bool {
-	//assetIdByte := vm.PopByteArray(e)
-	//assetId, err := common.Uint256ParseFromBytes(assetIdByte)
-	//if err != nil {
-	//	return false, err
-	//}
-	//d := vm.PopInteropInterface(e)
-	//if d == nil {
-	//	return false, fmt.Errorf("%v", "Get AccountState error in function AccountGetCodeHash")
-	//}
-	//accountState := d.(*states.AccountState)
-	//balance := common.Fixed64(0)
-	//if v, ok := accountState.Balances[assetId]; ok {
-	//	balance = v
-	//}
-	//vm.PushData(e, balance.IntValue())
+
+	d := vm.PopInteropInterface(e)
+	if d == nil {
+		fmt.Println("Get AccountState error in function AccountGetCodeHash")
+		return false
+	}
+	accountState := d.(*states.AccountState)
+	if accountState == nil {
+		fmt.Println("Get AccountState error in function AccountGetCodeHash")
+		return false
+	}
+
+	assetIdByte := vm.PopByteArray(e)
+	assetId, err := common.Uint256FromBytes(assetIdByte)
+	if err != nil {
+		return false
+	}
+
+	balance := common.Fixed64(0)
+	if v, ok := accountState.Balances[*assetId]; ok {
+		balance = v
+	}
+	vm.PushData(e, balance.IntValue())
 	return true
 }
 

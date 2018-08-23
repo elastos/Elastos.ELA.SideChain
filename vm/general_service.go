@@ -1,5 +1,7 @@
 package vm
 
+import "fmt"
+
 type IGeneralService interface {
 	Register(method string, handler func(*ExecutionEngine) bool) bool
 	GetServiceMap() map[string]func(*ExecutionEngine) bool
@@ -42,6 +44,8 @@ func (i *GeneralService) GetServiceMap() map[string]func(*ExecutionEngine) bool 
 func (is *GeneralService) Invoke(method string, engine *ExecutionEngine) bool {
 	if v, ok := is.dictionary[method]; ok {
 		return v(engine)
+	} else {
+		fmt.Println("can't find method:", method)
 	}
 	return false
 }

@@ -18,13 +18,12 @@ const (
 	// ASSET
 	ST_Info           	  DataEntryPrefix = 0xc0
 	ST_Contract 	      DataEntryPrefix = 0xc2
-	ST_Storage        DataEntryPrefix = 0xc3
+	ST_Storage            DataEntryPrefix = 0xc3
+	ST_Account			  DataEntryPrefix = 0xc4
 	ST_AssetState         DataEntryPrefix = 0xc5
 
 	//SYSTEM
 	SYS_CurrentBlock      DataEntryPrefix = 0x40
-	SYS_CurrentBookKeeper DataEntryPrefix = 0x42
 
-	//CONFIGST_Contract       DataEntryPrefix = 0xc2
 	CFG_Version 		  DataEntryPrefix = 0xf0
 )

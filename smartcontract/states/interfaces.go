@@ -21,7 +21,9 @@ type IStateKeyInterface interface {
 
 var (
 	StatesMap = map[DataEntryPrefix]IStateValueInterface{
-		ST_Contract: new(ContractState),
+		ST_Contract:   new(ContractState),
+		ST_Account:    new(AccountState),
+		ST_AssetState: new(AssetState),
 	}
 )
 

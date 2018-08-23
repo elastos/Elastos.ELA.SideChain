@@ -7,6 +7,7 @@ import (
 
 	"github.com/elastos/Elastos.ELA.SideChain/core"
 	"github.com/elastos/Elastos.ELA.SideChain/blockchain"
+	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
 	. "github.com/elastos/Elastos.ELA.SideChain/store"
 
 	. "github.com/elastos/Elastos.ELA.Utility/common"
@@ -323,6 +324,73 @@ func (c *ChainStore) PersistTransactions(b *core.Block, dbCache *DBCache) error 
 	return nil
 }
 
+func (c *ChainStore) PersistAccounts(b *core.Block) error {
+	accounts := make(map[Uint168]*states.AccountState, 0)
+	for _, txn := range b.Transactions {
+		for index := 0; index < len(txn.Outputs); index++ {
+			output := txn.Outputs[index]
+			programHash := output.ProgramHash
+			assetId := output.AssetID
+			if account, ok := accounts[programHash]; ok {
+				account.Balances[assetId] += output.Value
+			} else {
+				account, err := c.GetAccount(programHash)
+				if err != nil && err.Error() != ErrDBNotFound.Error() {
+					return err
+				}
+				if account != nil {
+					account.Balances[assetId] += output.Value
+				} else {
+					balances := make(map[Uint256]Fixed64, 0)
+					balances[assetId] = output.Value
+					account = states.NewAccountState(programHash, balances)
+				}
+				accounts[programHash] = account
+			}
+		}
+
+		for index := 0; index < len(txn.Inputs); index++ {
+			if txn.TxType == core.CoinBase {
+				continue
+			}
+			input := txn.Inputs[index]
+			transaction, _, err := c.GetTransaction(input.Previous.TxID)
+			if err != nil {
+				return err
+			}
+			index := input.Previous.Index
+			output := transaction.Outputs[index]
+			programHash := output.ProgramHash
+			assetID := output.AssetID
+			if account, ok := accounts[programHash]; ok {
+				account.Balances[assetID] -= output.Value
+			} else {
+				account, err := c.GetAccount(programHash)
+				if err != nil && err.Error() != ErrDBNotFound.Error() {
+					return err
+				}
+				account.Balances[assetID] -= output.Value
+				accounts[programHash] = account
+			}
+			if accounts[programHash].Balances[assetID] < 0 {
+				return errors.New(fmt.Sprintf("account programHash:%v, assetId:%v insufficient of balance", programHash, assetID))
+			}
+		}
+
+	}
+	for programHash, value := range accounts {
+		accountKey := new(bytes.Buffer)
+		accountKey.WriteByte(byte(ST_Account))
+		programHash.Serialize(accountKey)
+
+		accountValue := new(bytes.Buffer)
+		value.Serialize(accountValue)
+
+		c.BatchPut(accountKey.Bytes(), accountValue.Bytes())
+	}
+	return nil
+}
+
 func (c *ChainStore) RollbackTransactions(b *core.Block) error {
 	for _, txn := range b.Transactions {
 		if err := c.RollbackTransaction(txn); err != nil {
@@ -372,7 +440,6 @@ func (c *ChainStore) RollbackMainchainTx(mainchainTxHash Uint256) error {
 	c.BatchDelete(key)
 	return nil
 }
-
 
 func (c *ChainStore) PersistUnspend(b *core.Block) error {
 	unspentPrefix := []byte{byte(IX_Unspent)}
