@@ -630,6 +630,9 @@ func (c *ChainStore) persist(b *core.Block) error {
 	if err := c.PersistCurrentBlock(b); err != nil {
 		return err
 	}
+	if err := c.PersistAccounts(b); err != nil {
+		return err
+	}
 	return c.BatchCommit()
 }
 
@@ -936,4 +939,18 @@ func (c *ChainStore) GetContract(codeHash Uint168) ([]byte, error) {
 		return nil, err_get
 	}
 	return bData, nil
+}
+
+func (c *ChainStore) GetAccount(programHash Uint168) (*states.AccountState, error) {
+	accountPrefix := []byte{byte(ST_Account)}
+
+	state, err := c.Get(append(accountPrefix, programHash.Bytes()...))
+	if err != nil {
+		return nil, err
+	}
+
+	accountState := new(states.AccountState)
+	accountState.Deserialize(bytes.NewBuffer(state))
+
+	return accountState, nil
 }

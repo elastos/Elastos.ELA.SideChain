@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"github.com/elastos/Elastos.ELA.SideChain/core"
+	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
 
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 )
@@ -38,6 +39,7 @@ type IChainStore interface {
 	GetUnspentFromProgramHash(programHash Uint168, assetid Uint256) ([]*UTXO, error)
 	GetUnspentsFromProgramHash(programHash Uint168) (map[Uint256][]*UTXO, error)
 	GetAssets() map[Uint256]*core.Asset
+	GetAccount(programHash Uint168) (*states.AccountState, error)
 
 	IsTxHashDuplicate(txhash Uint256) bool
 	IsMainchainTxHashDuplicate(mainchainTxHash Uint256) bool
