@@ -10,7 +10,7 @@ import (
 func TestPayloadInvoke_Serialize(t *testing.T) {
 	payload := PayloadInvoke{}
 	payload.CodeHash = common.Uint168{1,2,3}
-	payload.Code = []byte{1, 2, 3, 4, 3, 1, 2, 3, 4, 3, 1, 2, 3, 4, 3, 1, 2, 3, 4, 3, 3};
+	payload.Code = []byte{1, 2, 3, 4, 3, 1, 2, 3, 4, 3, 1, 2, 3, 4, 3, 1, 2, 3, 4, 3, 3}
 	payload.ProgramHash = common.Uint168{3,4,1}
 
 	buf := new(bytes.Buffer)

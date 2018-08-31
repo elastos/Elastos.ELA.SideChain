@@ -1,5 +1,7 @@
 package vm
 
+import "math/big"
+
 func opToAltStack(e *ExecutionEngine) (VMState, error) {
 	if e.evaluationStack.Count() < 1 {
 		return FAULT, nil
@@ -109,7 +111,11 @@ func opPick(e *ExecutionEngine) (VMState, error) {
 func opRoll(e *ExecutionEngine) (VMState, error) {
 	n := PopInt(e)
 	if n == 0 { return NONE, nil }
-	Push(e, e.evaluationStack.Remove(n))
+	inter := e.evaluationStack.Remove(n)
+	if inter == nil {
+		inter, _ = NewStackItem(big.NewInt(0))
+	}
+	Push(e, inter)
 	return NONE, nil
 }
 

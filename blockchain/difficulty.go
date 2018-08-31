@@ -162,7 +162,7 @@ func CompactToBig(compact uint32) *big.Int {
 }
 
 func CalcCurrentDifficulty(currentBits uint32) string {
-	var genesisBlockBits uint32 = config.Parameters.ChainParam.PowLimitBits
+	var genesisBlockBits = config.Parameters.ChainParam.PowLimitBits
 	targetGenesisBlockBig := CompactToBig(genesisBlockBits)
 	targetCurrentBig := CompactToBig(currentBits)
 	return new(big.Int).Div(targetGenesisBlockBig, targetCurrentBig).String()

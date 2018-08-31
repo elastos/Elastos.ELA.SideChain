@@ -19,7 +19,7 @@ func (ic *PayloadInvoke) Data(version byte) []byte{
 func (ic *PayloadInvoke) Serialize(w io.Writer, version byte) error {
 	err := ic.CodeHash.Serialize(w)
 	if err != nil {
-		return err;
+		return err
 	}
 	err = common.WriteVarBytes(w, ic.Code)
 	if err != nil {
@@ -50,7 +50,7 @@ func (ic *PayloadInvoke) Deserialize(r io.Reader, version byte) error {
 	if err != nil {
 		return err
 	}
-	ic.ProgramHash = programHash;
+	ic.ProgramHash = programHash
 
 	return nil
 }
