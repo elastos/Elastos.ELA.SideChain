@@ -1,4 +1,4 @@
-package chain_store
+package blockchain
 
 import (
 	"bytes"
@@ -13,10 +13,10 @@ import (
 
 type DBCache struct {
 	RWSet *storage.RWSet
-	db    *ChainStore
+	db    IChainStore
 }
 
-func NewDBCache(db *ChainStore) *DBCache {
+func NewDBCache(db IChainStore) *DBCache {
 	return &DBCache{
 		RWSet: storage.NewRWSet(),
 		db:    db,
@@ -29,13 +29,13 @@ func (cache *DBCache) Commit() {
 		key := make([]byte, 0)
 		key = append([]byte{byte(v.Prefix)}, []byte(k)...)
 		if v.IsDeleted {
-			cache.db.IStore.BatchDelete(key)
+			cache.db.BatchDelete(key)
 		} else {
 			b := new(bytes.Buffer)
 			v.Item.Serialize(b)
 			value := make([]byte, 0)
 			value = append(value, b.Bytes()...)
-			cache.db.IStore.BatchPut(key, value)
+			cache.db.BatchPut(key, value)
 		}
 	}
 }
@@ -43,7 +43,7 @@ func (cache *DBCache) Commit() {
 func (cache *DBCache) TryGetInternal(prefix DataEntryPrefix, key string) (states.IStateValueInterface, error) {
 	k := make([]byte, 0)
 	k = append([]byte{byte(prefix)}, []byte(key)...)
-	value, err := cache.db.IStore.Get(k)
+	value, err := cache.db.Get(k)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (cache *DBCache) GetOrAdd(prefix DataEntryPrefix, key string, value states.
 		}
 	} else {
 		item, err := cache.TryGetInternal(prefix, key)
-		if err != nil && err.Error() != ErrDBNotFound.Error() {
+		if err != nil && err.Error() != ("leveldb: not found") {
 			return nil, err
 		}
 		write := &storage.Write{

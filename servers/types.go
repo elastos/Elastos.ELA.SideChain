@@ -1,8 +1,7 @@
-package service
+package servers
 
 import (
 	"github.com/elastos/Elastos.ELA.SideChain/core"
-	"github.com/elastos/Elastos.ELA.SideChain/servers"
 	"github.com/elastos/Elastos.ELA.Utility/common"
 )
 
@@ -13,9 +12,9 @@ type AssetInfo struct{
 	RecordType byte
 }
 
-func GetHeaderInfo(header *core.Header) *servers.BlockHead  {
+func GetHeaderInfo(header *core.Header) *BlockHead  {
 	h := header.Hash()
-	return &servers.BlockHead{
+	return &BlockHead{
 		Version:           header.Version,
 		PrevBlockHash:     common.BytesToHexString(common.BytesReverse(header.Previous.Bytes())),
 		TransactionsRoot:  common.BytesToHexString(common.BytesReverse(header.MerkleRoot.Bytes())),

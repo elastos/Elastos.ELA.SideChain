@@ -3,13 +3,14 @@ package chain_store
 import (
 	"github.com/elastos/Elastos.ELA.SideChain/store"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
+	"github.com/elastos/Elastos.ELA.SideChain/blockchain"
 )
 
 type CacheCodeTable struct {
-	dbCache *DBCache
+	dbCache *blockchain.DBCache
 }
 
-func NewCacheCodeTable(dbCache *DBCache) *CacheCodeTable {
+func NewCacheCodeTable(dbCache *blockchain.DBCache) *CacheCodeTable {
 	return &CacheCodeTable{dbCache: dbCache}
 }
 

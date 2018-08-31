@@ -293,7 +293,7 @@ func (c *ChainStore) RollbackUnspendUTXOs(b *core.Block) error {
 	return nil
 }
 
-func (c *ChainStore) PersistTransactions(b *core.Block, dbCache *DBCache) error {
+func (c *ChainStore) PersistTransactions(b *core.Block, dbCache *blockchain.DBCache) error {
 	for _, txn := range b.Transactions {
 		if err := c.PersistTransaction(txn, b.Header.Height); err != nil {
 			return err
