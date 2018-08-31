@@ -62,14 +62,9 @@ func RunPrograms(tx *core.Transaction, hashes []Uint168, programs []*core.Progra
 		if !hashes[i].IsEqual(*programHash) {
 			return errors.New("The data hashes is different with corresponding program code.")
 		}
-		//execute program on VM
-		//store, ok := blockchain.DefaultLedger.Store.(*chain_store.ChainStore)
-		//if !ok {
-		//	return errors.New("")
-		//}
-		//dbCache := chain_store.NewDBCache(store)
-		//stateMachine := service.NewStateMachine(dbCache, dbCache)
-		se := vm.NewExecutionEngine(tx.GetDataContainer(programHash), new(vm.CryptoECDsa), vm.MAXSTEPS, nil, nil, 0)
+		dbCache := NewDBCache(DefaultLedger.Store)
+		stateMachine := NewStateMachine(dbCache, dbCache)
+		se := vm.NewExecutionEngine(tx.GetDataContainer(programHash), new(vm.CryptoECDsa), vm.MAXSTEPS, nil, stateMachine, 0)
 		signType := programs[i].Code[len(programs[i].Code) - 1]
 		var script []byte
 		if signType == SMARTCONTRACT {

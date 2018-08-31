@@ -1,4 +1,4 @@
-package service
+package blockchain
 
 import (
 	"math/big"
@@ -9,12 +9,12 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/vm"
 	"github.com/elastos/Elastos.ELA.SideChain/contract"
 	common2 "github.com/elastos/Elastos.ELA.SideChain/common"
-	"github.com/elastos/Elastos.ELA.SideChain/blockchain"
 	"github.com/elastos/Elastos.ELA.SideChain/core"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/types"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
 	"errors"
 	"fmt"
+	"github.com/elastos/Elastos.ELA/blockchain"
 )
 
 type StateReader struct {
@@ -114,7 +114,7 @@ func (s *StateReader) CheckWitnessHash(engine *vm.ExecutionEngine, programHash c
 		return false, errors.New("CheckWitnessHash getDataContainer is null")
 	}
 	tx := engine.GetDataContainer().(*core.Transaction)
-	hashForVerify, err := blockchain.GetTxProgramHashes(tx)
+	hashForVerify, err := GetTxProgramHashes(tx)
 	if err != nil {
 		return false, err
 	}
@@ -164,8 +164,8 @@ func (s *StateReader) RuntimeCheckWitness(e *vm.ExecutionEngine) bool {
 
 func (s *StateReader) BlockChainGetHeight(e *vm.ExecutionEngine) bool {
 	var i uint32 = 0
-	if blockchain.DefaultLedger != nil {
-		i = blockchain.DefaultLedger.Store.GetHeight();
+	if DefaultLedger != nil {
+		i = DefaultLedger.Store.GetHeight();
 	}
 	vm.PushData(e, i)
 	return true
@@ -182,17 +182,17 @@ func (s *StateReader) BlockChainGetHeader(e *vm.ExecutionEngine) bool {
 	if l <= 5 {
 		b := new(big.Int)
 		height := b.SetBytes(common.BytesReverse(data)).Int64()
-		if blockchain.DefaultLedger != nil {
-			hash, err := blockchain.DefaultLedger.Store.GetBlockHash((uint32(height)))
+		if DefaultLedger != nil {
+			hash, err := DefaultLedger.Store.GetBlockHash((uint32(height)))
 			if err != nil {
 				return false
 			}
-			header, err = blockchain.DefaultLedger.Store.GetHeader(hash)
+			header, err = DefaultLedger.Store.GetHeader(hash)
 		}
 	} else if l == 32 {
 		hash, _ := common.Uint256FromBytes(data)
-		if blockchain.DefaultLedger != nil {
-			header, err = blockchain.DefaultLedger.Store.GetHeader(*hash)
+		if DefaultLedger != nil {
+			header, err = DefaultLedger.Store.GetHeader(*hash)
 		}
 	} else {
 		return false
@@ -214,20 +214,20 @@ func (s *StateReader) BlockChainGetBlock(e *vm.ExecutionEngine) bool {
 	if l <= 5 {
 		b := new(big.Int)
 		height := uint32(b.SetBytes(common.BytesReverse(data)).Int64())
-		if blockchain.DefaultLedger != nil {
-			hash, err := blockchain.DefaultLedger.Store.GetBlockHash(height)
+		if DefaultLedger != nil {
+			hash, err := DefaultLedger.Store.GetBlockHash(height)
 			if err != nil {
 				return false
 			}
-			block, err = blockchain.DefaultLedger.Store.GetBlock(hash)
+			block, err = DefaultLedger.Store.GetBlock(hash)
 		}
 	} else if l == 32 {
 		hash, err := common.Uint256FromBytes(data)
 		if err != nil {
 			return false
 		}
-		if blockchain.DefaultLedger != nil {
-			block, err = blockchain.DefaultLedger.Store.GetBlock(*hash)
+		if DefaultLedger != nil {
+			block, err = DefaultLedger.Store.GetBlock(*hash)
 		}
 	} else {
 		return false
@@ -260,7 +260,7 @@ func (s *StateReader) BlockChainGetAccount(e *vm.ExecutionEngine) bool {
 		return false
 	}
 
-	account, err := blockchain.DefaultLedger.Store.GetAccount(*hash)
+	account, err := DefaultLedger.Store.GetAccount(*hash)
 	vm.PushData(e, account)
 	return true
 }
@@ -271,7 +271,7 @@ func (s *StateReader) BlockChainGetAsset(e *vm.ExecutionEngine) bool {
 	if err != nil {
 		return false
 	}
-	asset, err := blockchain.DefaultLedger.Store.GetAsset(*hash)
+	asset, err := DefaultLedger.Store.GetAsset(*hash)
 	if err != nil {
 		return false
 	}
@@ -448,7 +448,7 @@ func (s *StateReader) TransactionGetReferences(e *vm.ExecutionEngine) bool {
 		return false
 	}
 
-	references, err := blockchain.DefaultLedger.Store.GetTxReference(d.(*core.Transaction))
+	references, err := DefaultLedger.Store.GetTxReference(d.(*core.Transaction))
 	if err != nil {
 		return false
 	}

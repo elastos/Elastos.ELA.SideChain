@@ -17,12 +17,11 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract"
 	"github.com/elastos/Elastos.ELA.SideChain/servers/httpwebsocket"
 	"github.com/elastos/Elastos.ELA.SideChain/common"
-	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/service"
 	. "github.com/elastos/Elastos.ELA.SideChain/store"
 	. "github.com/elastos/Elastos.ELA.SideChain/errors"
 
 	. "github.com/elastos/Elastos.ELA.Utility/common"
-	)
+)
 
 const ValueNone = 0
 const ValueExist = 1
@@ -86,12 +85,13 @@ func NewChainStore() (blockchain.IChainStore, error) {
 	return store, nil
 }
 
-func (c *ChainStore) Close() {
+func (c *ChainStore) Close() error {
 	closed := make(chan bool)
 	c.quit <- closed
 	<-closed
 
 	c.IStore.Close()
+	return nil
 }
 
 func (c *ChainStore) loop() {
@@ -399,7 +399,7 @@ func (c *ChainStore) GetMainchainTx(mainchainTxHash Uint256) (byte, error) {
 	return data[0], nil
 }
 
-func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCache *DBCache) error {
+func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCache *blockchain.DBCache) error {
 	payloadDeploy, ok := tx.Payload.(*core.PayloadDeploy)
 	if !ok {
 		return errors.New("invalid deploy payload")
@@ -417,7 +417,7 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 
 	smartcontract, err := smartcontract.NewSmartContract(&smartcontract.Context{
 		Caller:       payloadDeploy.ProgramHash,
-		StateMachine: service.NewStateMachine(dbCache, NewDBCache(c)),
+		StateMachine: blockchain.NewStateMachine(dbCache, blockchain.NewDBCache(c)),
 		DBCache:      dbCache,
 		Code:         payloadDeploy.Code.Code,
 		Time:         big.NewInt(int64(b.Timestamp)),
@@ -450,7 +450,7 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 	return nil
 }
 
-func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCache *DBCache) error {
+func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCache *blockchain.DBCache) error {
 	payloadInvoke := tx.Payload.(*core.PayloadInvoke)
 	contract, err := c.GetContract(payloadInvoke.CodeHash)
 	if err != nil {
@@ -464,7 +464,7 @@ func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCach
 	}
 
 	constractState := state.(*states.ContractState)
-	stateMachine := service.NewStateMachine(dbCache, NewDBCache(c))
+	stateMachine := blockchain.NewStateMachine(dbCache, blockchain.NewDBCache(c))
 	smartcontract, err := smartcontract.NewSmartContract(&smartcontract.Context{
 		Caller:         payloadInvoke.ProgramHash,
 		StateMachine:   stateMachine,
@@ -614,7 +614,7 @@ func (c *ChainStore) rollback(b *core.Block) error {
 
 func (c *ChainStore) persist(b *core.Block) error {
 	c.NewBatch()
-	dbCache := NewDBCache(c)
+	dbCache := blockchain.NewDBCache(c)
 	if err := c.PersistTrimmedBlock(b); err != nil {
 		return err
 	}

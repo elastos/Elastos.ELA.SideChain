@@ -10,7 +10,6 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/config"
 	"github.com/elastos/Elastos.ELA.SideChain/core"
 	"github.com/elastos/Elastos.ELA.SideChain/log"
-	"github.com/elastos/Elastos.ELA.SideChain/store/chain_store"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/stretchr/testify/assert"
@@ -254,9 +253,9 @@ func TestCheckAssetPrecision(t *testing.T) {
 			Amount: 0 * 100000000,
 		},
 	}
-	DefaultLedger.Store.(*chain_store.ChainStore).NewBatch()
+	DefaultLedger.Store.(*ChainStore).NewBatch()
 	DefaultLedger.Store.PersistAsset(register.Hash(), asset)
-	DefaultLedger.Store.(*chain_store.ChainStore).BatchCommit()
+	DefaultLedger.Store.(*ChainStore).BatchCommit()
 
 	// valid precision
 	for _, output := range tx.Outputs {
@@ -408,9 +407,9 @@ func TestCheckTransactionBalance(t *testing.T) {
 	deposit.Outputs = []*core.Output{
 		{AssetID: DefaultLedger.Blockchain.AssetID, ProgramHash: FoundationAddress, Value: common.Fixed64(100 * ELA)},
 	}
-	DefaultLedger.Store.(*chain_store.ChainStore).NewBatch()
-	DefaultLedger.Store.(*chain_store.ChainStore).PersistTransaction(deposit, 0)
-	DefaultLedger.Store.(*chain_store.ChainStore).BatchCommit()
+	DefaultLedger.Store.(*ChainStore).NewBatch()
+	DefaultLedger.Store.(*ChainStore).PersistTransaction(deposit, 0)
+	DefaultLedger.Store.(*ChainStore).BatchCommit()
 
 	// invalid output value
 	tx = NewCoinBaseTransaction(new(core.PayloadCoinBase), 0)
@@ -434,9 +433,9 @@ func TestCheckTransactionBalance(t *testing.T) {
 	assert.EqualError(t, err, "Transaction fee not enough")
 
 	// rollback deposit above
-	DefaultLedger.Store.(*chain_store.ChainStore).NewBatch()
-	DefaultLedger.Store.(*chain_store.ChainStore).RollbackTransaction(deposit)
-	DefaultLedger.Store.(*chain_store.ChainStore).BatchCommit()
+	DefaultLedger.Store.(*ChainStore).NewBatch()
+	DefaultLedger.Store.(*ChainStore).RollbackTransaction(deposit)
+	DefaultLedger.Store.(*ChainStore).BatchCommit()
 
 	t.Log("[TestCheckTransactionBalance] PASSED")
 }

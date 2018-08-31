@@ -1,4 +1,4 @@
-package service
+package blockchain
 
 import (
 	"math"
@@ -10,12 +10,12 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/core"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/errors"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
-	"github.com/elastos/Elastos.ELA.SideChain/blockchain"
 	"github.com/elastos/Elastos.ELA.SideChain/store"
 	"github.com/elastos/Elastos.ELA.SideChain/contract"
 
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
 	"github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA/blockchain"
 )
 
 type StateMachine struct {
@@ -96,7 +96,7 @@ func (s *StateMachine) CreateAsset(engine *vm.ExecutionEngine) bool {
 		Admin:      *admin,
 		Issuer:     *issue,
 		Owner:      owner,
-		Expiration: blockchain.DefaultLedger.Store.GetHeight() + 1 + 2000000,
+		Expiration: DefaultLedger.Store.GetHeight() + 1 + 2000000,
 		IsFrozen:   false,
 	}
 	s.CloneCache.GetInnerCache().GetWriteSet().Add(store.ST_AssetState, string(assetID.Bytes()), assetState)

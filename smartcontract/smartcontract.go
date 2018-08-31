@@ -8,7 +8,6 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/contract"
 	"github.com/elastos/Elastos.ELA.SideChain/vm"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
-	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/service"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/types"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/storage"
 	"github.com/elastos/Elastos.ELA.SideChain/core"
@@ -16,6 +15,7 @@ import (
 	. "github.com/elastos/Elastos.ELA.SideChain/common"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.SideChain/blockchain"
 )
 
 type SmartContract struct {
@@ -38,7 +38,7 @@ type Context struct {
 	Time           *big.Int
 	BlockNumber    *big.Int
 	SignableData   SignableData
-	StateMachine   *service.StateMachine
+	StateMachine   *blockchain.StateMachine
 	DBCache        storage.DBCache
 	Gas            common.Fixed64
 	ReturnType     contract.ContractParameterType
@@ -114,13 +114,13 @@ func (sc *SmartContract) InvokeResult() (interface{}, error) {
 				interop := data.GetInterface()
 				switch interop.(type) {
 				case *core.Header:
-					return service.GetHeaderInfo(interop.(*core.Header)), nil
+					return servers.GetHeaderInfo(interop.(*core.Header)), nil
 				case *core.Block:
 					return servers.GetBlockInfo(interop.(*core.Block), true), nil
 				case *core.Transaction:
 					return servers.GetTransactionInfo(nil, interop.(*core.Transaction)), nil
 				case *core.Asset:
-					return service.GetAssetInfo(interop.(*core.Asset)), nil
+					return servers.GetAssetInfo(interop.(*core.Asset)), nil
 				}
 			}
 

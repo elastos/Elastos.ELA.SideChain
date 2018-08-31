@@ -3,12 +3,13 @@ package blockchain
 import (
 	"github.com/elastos/Elastos.ELA.SideChain/core"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
-
 	. "github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.SideChain/store"
 )
 
 // IChainStore provides func with store package.
 type IChainStore interface {
+	store.IStore
 	InitWithGenesisBlock(genesisblock *core.Block) (uint32, error)
 
 	SaveBlock(b *core.Block) error
@@ -44,5 +45,4 @@ type IChainStore interface {
 	IsTxHashDuplicate(txhash Uint256) bool
 	IsMainchainTxHashDuplicate(mainchainTxHash Uint256) bool
 	IsBlockInStore(hash Uint256) bool
-	Close()
 }
