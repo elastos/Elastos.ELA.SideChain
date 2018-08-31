@@ -137,7 +137,7 @@ func (pool *TxPool) verifyDoubleSpend(txn *core.Transaction) error {
 	if err != nil {
 		return err
 	}
-	inputs := []*core.Input{}
+	var inputs []*core.Input
 	for k := range reference {
 		if txn := pool.getInputUTXOList(k); txn != nil {
 			return errors.New(fmt.Sprintf("double spent UTXO inputs detected, "+
@@ -187,7 +187,7 @@ func (pool *TxPool) verifyDuplicateMainchainTx(txn *core.Transaction) error {
 func (pool *TxPool) cleanUTXOList(txs []*core.Transaction) {
 	for _, txn := range txs {
 		inputUtxos, _ := DefaultLedger.Store.GetTxReference(txn)
-		for Utxoinput, _ := range inputUtxos {
+		for Utxoinput := range inputUtxos {
 			pool.delInputUTXOList(Utxoinput)
 		}
 	}

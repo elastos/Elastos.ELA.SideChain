@@ -26,6 +26,7 @@ type SmartContract struct {
 	Caller         common.Uint168
 	CodeHash       common.Uint168
 	ReturnType     contract.ContractParameterType
+	Trigger        TriggerType
 }
 
 type Context struct {
@@ -42,6 +43,7 @@ type Context struct {
 	Gas            common.Fixed64
 	ReturnType     contract.ContractParameterType
 	ParameterTypes []contract.ContractParameterType
+	Trigger        TriggerType
 }
 
 type Engine interface {
@@ -65,6 +67,7 @@ func NewSmartContract(context *Context) (*SmartContract, error) {
 		Caller:         context.Caller,
 		ReturnType:     context.ReturnType,
 		ParameterTypes: context.ParameterTypes,
+		Trigger:        context.Trigger,
 	}, nil
 }
 

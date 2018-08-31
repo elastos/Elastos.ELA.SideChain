@@ -217,7 +217,7 @@ func (al *KnownAddressList) RandGetAddresses(nbrAddrs []p2p.NetAddress) []p2p.Ne
 
 	addrLen := len(keys)
 	var i int
-	addrs := []p2p.NetAddress{}
+	var addrs []p2p.NetAddress
 	if MaxOutBoundCount-len(nbrAddrs) > addrLen {
 		for _, v := range keys {
 			ka, ok := al.List[v]
@@ -256,7 +256,7 @@ func (al *KnownAddressList) RandSelectAddresses() []p2p.NetAddress {
 	al.RLock()
 	defer al.RUnlock()
 	var keys []uint64
-	addrs := []p2p.NetAddress{}
+	var addrs []p2p.NetAddress
 	for k := range al.List {
 		keys = append(keys, k)
 	}

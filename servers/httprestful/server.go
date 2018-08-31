@@ -202,7 +202,7 @@ func (rt *restServer) getParams(r *http.Request, url string, req map[string]inte
 
 func (rt *restServer) initGetHandler() {
 
-	for k, _ := range rt.getMap {
+	for k := range rt.getMap {
 		rt.router.Get(k, func(w http.ResponseWriter, r *http.Request) {
 
 			var req = make(map[string]interface{})
@@ -222,7 +222,7 @@ func (rt *restServer) initGetHandler() {
 }
 
 func (rt *restServer) initPostHandler() {
-	for k, _ := range rt.postMap {
+	for k := range rt.postMap {
 		rt.router.Post(k, func(w http.ResponseWriter, r *http.Request) {
 
 			body, _ := ioutil.ReadAll(r.Body)
@@ -246,7 +246,7 @@ func (rt *restServer) initPostHandler() {
 		})
 	}
 	//Options
-	for k, _ := range rt.postMap {
+	for k := range rt.postMap {
 		rt.router.Options(k, func(w http.ResponseWriter, r *http.Request) {
 			rt.write(w, []byte{})
 		})

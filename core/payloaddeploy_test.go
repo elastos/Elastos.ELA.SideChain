@@ -13,10 +13,10 @@ import (
 func TestPayloadDeploy_Serialize(t *testing.T) {
 	payload := PayloadDeploy{}
 	code := contract.FunctionCode{}
-	code.Code = []byte{1, 2, 3, 4, 3, 1, 2, 3, 4, 3, 1, 2, 3, 4, 3, 1, 2, 3, 4, 3, 3};
+	code.Code = []byte{1, 2, 3, 4, 3, 1, 2, 3, 4, 3, 1, 2, 3, 4, 3, 1, 2, 3, 4, 3, 3}
 	code.ParameterTypes = []contract.ContractParameterType{contract.Signature}
 	code.ReturnType = contract.Boolean
-	code.CodeHash();
+	code.CodeHash()
 	payload.Code = &code
 	payload.Params = []byte{1,3,4}
 	payload.Name = "testName"

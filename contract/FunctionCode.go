@@ -26,7 +26,7 @@ type FunctionCode struct {
 
 // method of SerializableData
 func (fc *FunctionCode) Serialize(w io.Writer) error {
-	err := common.WriteUint8(w, (uint8(fc.ReturnType)))
+	err := common.WriteUint8(w, uint8(fc.ReturnType))
 	if err != nil {
 		return err
 	}

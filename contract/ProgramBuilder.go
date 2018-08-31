@@ -48,11 +48,11 @@ func (pb *ProgramBuilder) PushData(data []byte) {
 
 	if len(data) <= int(vm.PUSHBYTES75) {
 		pb.buffer.WriteByte(byte(len(data)))
-		pb.buffer.Write(data[0:len(data)])
+		pb.buffer.Write(data[0:])
 	} else if len(data) < 0x100 {
 		pb.AddOp(vm.PUSHDATA1)
-		pb.buffer.WriteByte(byte((len(data))))
-		pb.buffer.Write(data[0:len(data)])
+		pb.buffer.WriteByte(byte(len(data)))
+		pb.buffer.Write(data[0:])
 	} else if len(data) < 0x10000 {
 		pb.AddOp(vm.PUSHDATA2)
 		//dataByte := servers.IntToBytes(len(data))

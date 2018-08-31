@@ -62,6 +62,7 @@ func CheckTransactionSanity(txn *core.Transaction) ErrCode {
 // CheckTransactionContext verifys a transaction with history transaction in ledger
 func CheckTransactionContext(txn *core.Transaction) ErrCode {
 	// check if duplicated with transaction in ledger
+	fmt.Println("txn.Hash():", txn.Hash())
 	if exist := DefaultLedger.Store.IsTxHashDuplicate(txn.Hash()); exist {
 		log.Info("[CheckTransactionContext] duplicate transaction check faild.")
 		return ErrTxHashDuplicate
@@ -224,6 +225,7 @@ func CheckOutputProgramHash(programHash Uint168) bool {
 		prefix == PrefixMultisig ||
 		prefix == PrefixCrossChain ||
 		prefix == PrefixRegisterId ||
+		prefix == PrefixSmartContract ||
 		programHash == empty {
 		return true
 	}

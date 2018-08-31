@@ -63,11 +63,25 @@ func RunPrograms(tx *core.Transaction, hashes []Uint168, programs []*core.Progra
 			return errors.New("The data hashes is different with corresponding program code.")
 		}
 		//execute program on VM
+		//store, ok := blockchain.DefaultLedger.Store.(*chain_store.ChainStore)
+		//if !ok {
+		//	return errors.New("")
+		//}
+		//dbCache := chain_store.NewDBCache(store)
+		//stateMachine := service.NewStateMachine(dbCache, dbCache)
 		se := vm.NewExecutionEngine(tx.GetDataContainer(programHash), new(vm.CryptoECDsa), vm.MAXSTEPS, nil, nil, 0)
-		se.LoadScript(programs[i].Code, false)
+		signType := programs[i].Code[len(programs[i].Code) - 1]
+		var script []byte
+		if signType == SMARTCONTRACT {
+			script = make([]byte, len(programs[i].Code) - 1)
+			copy(script, programs[i].Code[:len(programs[i].Code) - 1])
+		} else {
+			script = make([]byte, len(programs[i].Code))
+			copy(script, programs[i].Code[:len(programs[i].Code)])
+		}
+		se.LoadScript(script, false)
 		se.LoadScript(programs[i].Parameter, true)
 		se.Execute()
-
 		if se.GetState() != vm.HALT {
 			return errors.New("[VM] Finish State not equal to HALT.")
 		}

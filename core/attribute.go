@@ -61,7 +61,7 @@ func NewAttribute(u AttributeUsage, d []byte) Attribute {
 
 func (u *Attribute) GetSize() uint32 {
 	if u.Usage == DescriptionUrl {
-		return uint32(len([]byte{(byte(0xff))}) + len([]byte{(byte(0xff))}) + len(u.Data))
+		return uint32(len([]byte{byte(0xff)}) + len([]byte{byte(0xff)}) + len(u.Data))
 	}
 	return 0
 }

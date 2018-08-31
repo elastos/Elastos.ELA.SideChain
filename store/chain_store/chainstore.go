@@ -423,6 +423,7 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 		Time:         big.NewInt(int64(b.Timestamp)),
 		BlockNumber:  big.NewInt(int64(b.Height)),
 		Gas:          Fixed64(0), //todo confirm this gas is set to PayloadDeploy
+		Trigger:      smartcontract.Application,
 	})
 	if err != nil {
 		httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), DEPLOY_TRANSACTION, err)
@@ -445,6 +446,7 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 
 	log.Info("deploy tx code:", BytesToHexString(ret))
 	log.Info("deploy tx Hash:", BytesToHexString(hash.Bytes()))
+	
 	return nil
 }
 
@@ -476,6 +478,7 @@ func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCach
 		Gas:            Fixed64(0),
 		ReturnType:     constractState.Code.ReturnType,
 		ParameterTypes: constractState.Code.ParameterTypes,
+		Trigger:      	smartcontract.Application,
 	})
 	if err != nil {
 		httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), INVOKE_TRANSACTION, err)

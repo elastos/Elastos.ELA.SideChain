@@ -62,10 +62,10 @@ func (dc *PayloadDeploy) Serialize(w io.Writer, version byte) error {
 
 	err = dc.ProgramHash.Serialize(w)
 	if err != nil {
-		return err;
+		return err
 	}
 
-	return nil;
+	return nil
 }
 
 func (dc *PayloadDeploy) Deserialize(r io.Reader, version byte) error {
@@ -111,5 +111,5 @@ func (dc *PayloadDeploy) Deserialize(r io.Reader, version byte) error {
 		return err
 	}
 
-	return nil;
+	return nil
 }
