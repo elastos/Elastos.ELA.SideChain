@@ -41,3 +41,7 @@ func (ii *GeneralInterface) GetInterface() interfaces.IGeneralInterface {
 func (ii *GeneralInterface) GetArray() []StackItem {
 	return []StackItem{}
 }
+
+func (ii *GeneralInterface) Bytes() []byte {
+	return ii.GetByteArray();
+}

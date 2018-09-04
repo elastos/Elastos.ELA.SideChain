@@ -29,6 +29,7 @@ func NewStateReader() *StateReader {
 	stateReader.Register("Neo.Runtime.CheckWitness", stateReader.RuntimeCheckWitness)
 	stateReader.Register("Neo.Runtime.Notify", stateReader.RuntimeNotify)
 	stateReader.Register("Neo.Runtime.Log", stateReader.RuntimeLog)
+	stateReader.Register("Neo.Runtime.GetTime", stateReader.RuntimeGetTime)
 
 	stateReader.Register("Neo.Blockchain.GetHeight", stateReader.BlockChainGetHeight)
 	stateReader.Register("Neo.Blockchain.GetHeader", stateReader.BlockChainGetHeader)
@@ -97,6 +98,7 @@ func (s *StateReader) GetServiceMap() map[string]func(*vm.ExecutionEngine) bool 
 }
 
 func (s *StateReader) RuntimeGetTrigger(e *vm.ExecutionEngine) bool {
+	vm.PushData(e, int(e.GetTrigger()))
 	return true
 }
 
@@ -106,13 +108,34 @@ func (s *StateReader) RuntimeNotify(e *vm.ExecutionEngine) bool {
 }
 
 func (s *StateReader) RuntimeLog(e *vm.ExecutionEngine) bool {
+	msg := string(vm.PopByteArray(e))
+	fmt.Println("RuntimeLog msg:", msg)
 	return true
+}
+
+func (s *StateReader) RuntimeGetTime(e *vm.ExecutionEngine) bool {
+	var height uint32 = 0
+	if DefaultLedger != nil {
+		height = DefaultLedger.Blockchain.BlockHeight
+		hash, err := DefaultLedger.Store.GetBlockHash(height)
+		if err != nil {
+			block, gerr := blockchain.GetGenesisBlock()
+			if gerr != nil {
+				return false
+			}
+			hash = block.Hash()
+		}
+		header, err := DefaultLedger.Store.GetHeader(hash)
+		vm.PushData(e, header.Timestamp)
+	}
+	return true;
 }
 
 func (s *StateReader) CheckWitnessHash(engine *vm.ExecutionEngine, programHash common.Uint168) (bool, error) {
 	if engine.GetDataContainer() == nil {
 		return false, errors.New("CheckWitnessHash getDataContainer is null")
 	}
+
 	tx := engine.GetDataContainer().(*core.Transaction)
 	hashForVerify, err := GetTxProgramHashes(tx)
 	if err != nil {
@@ -141,6 +164,14 @@ func (s *StateReader) RuntimeCheckWitness(e *vm.ExecutionEngine) bool {
 		err    error
 	)
 	if len(data) == 21 {
+		program, err := common.Uint168FromBytes(data)
+		if err != nil {
+			return false
+		}
+		result, err = s.CheckWitnessHash(e, *program)
+	} else if len(data) == 20 {
+		temp := []byte{33}
+		data = append(temp, data...)
 		program, err := common.Uint168FromBytes(data)
 		if err != nil {
 			return false
@@ -420,9 +451,9 @@ func (s *StateReader) TransactionGetInputs(e *vm.ExecutionEngine) bool {
 		return false
 	}
 	inputs := d.(*core.Transaction).Inputs
-	list := make([]types.GeneralInterface, 0)
+	list := make([]types.StackItem, 0)
 	for _, v := range inputs {
-		list = append(list, *types.NewGeneralInterface(v))
+		list = append(list, types.NewGeneralInterface(v))
 	}
 	vm.PushData(e, list)
 	return true
@@ -434,9 +465,9 @@ func (s *StateReader) TransactionGetOutputs(e *vm.ExecutionEngine) bool {
 		return false
 	}
 	outputs := d.(*core.Transaction).Outputs
-	list := make([]types.GeneralInterface, 0)
+	list := make([]types.StackItem, 0)
 	for _, v := range outputs {
-		list = append(list, *types.NewGeneralInterface(v))
+		list = append(list, types.NewGeneralInterface(v))
 	}
 	vm.PushData(e, list)
 	return true
@@ -452,9 +483,9 @@ func (s *StateReader) TransactionGetReferences(e *vm.ExecutionEngine) bool {
 	if err != nil {
 		return false
 	}
-	list := make([]types.GeneralInterface, 0)
+	list := make([]types.StackItem, 0)
 	for _, v := range references {
-		list = append(list, *types.NewGeneralInterface(v))
+		list = append(list, types.NewGeneralInterface(v))//
 	}
 	vm.PushData(e, list)
 	return true

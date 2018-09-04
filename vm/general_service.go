@@ -14,10 +14,10 @@ type GeneralService struct {
 func NewGeneralService() *GeneralService {
 	var is GeneralService
 	is.dictionary = make(map[string]func(*ExecutionEngine) bool, 0)
-	is.Register("System.ScriptEngine.GetScriptContainer", is.GetScriptContainer)
-	is.Register("System.ScriptEngine.GetExecutingScriptHash", is.GetExecutingScriptHash)
-	is.Register("System.ScriptEngine.GetCallingScriptHash", is.GetCallingScriptHash)
-	is.Register("System.ScriptEngine.GetEntryScriptHash", is.GetEntryScriptHash)
+	is.Register("System.ExecutionEngine.GetScriptContainer", is.GetScriptContainer)
+	is.Register("System.ExecutionEngine.GetExecutingScriptHash", is.GetExecutingScriptHash)
+	is.Register("System.ExecutionEngine.GetCallingScriptHash", is.GetCallingScriptHash)
+	is.Register("System.ExecutionEngine.GetEntryScriptHash", is.GetEntryScriptHash)
 	return &is
 }
 
@@ -51,21 +51,21 @@ func (is *GeneralService) Invoke(method string, engine *ExecutionEngine) bool {
 }
 
 func (is *GeneralService) GetScriptContainer(engine *ExecutionEngine) bool {
-	engine.evaluationStack.Push(engine.dataContainer)
+	PushData(engine, engine.dataContainer)
 	return true
 }
 
 func (is *GeneralService) GetExecutingScriptHash(engine *ExecutionEngine) bool {
-	engine.evaluationStack.Push(engine.crypto.Hash168(engine.ExecutingScript()))
+	PushData(engine, engine.crypto.Hash168(engine.ExecutingScript()))
 	return true
 }
 
 func (is *GeneralService) GetCallingScriptHash(engine *ExecutionEngine) bool {
-	engine.evaluationStack.Push(engine.crypto.Hash168(engine.CallingScript()))
+	pushData(engine, engine.crypto.Hash168(engine.CallingScript()))
 	return true
 }
 
 func (is *GeneralService) GetEntryScriptHash(engine *ExecutionEngine) bool {
-	engine.evaluationStack.Push(engine.crypto.Hash168(engine.EntryScript()))
+	pushData(engine, engine.crypto.Hash168(engine.EntryScript()))
 	return true
 }

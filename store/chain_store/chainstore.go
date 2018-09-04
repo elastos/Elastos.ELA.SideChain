@@ -21,6 +21,7 @@ import (
 	. "github.com/elastos/Elastos.ELA.SideChain/errors"
 
 	. "github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.SideChain/vm"
 )
 
 const ValueNone = 0
@@ -423,7 +424,7 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 		Time:         big.NewInt(int64(b.Timestamp)),
 		BlockNumber:  big.NewInt(int64(b.Height)),
 		Gas:          Fixed64(0), //todo confirm this gas is set to PayloadDeploy
-		Trigger:      smartcontract.Application,
+		Trigger:      vm.Application,
 	})
 	if err != nil {
 		httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), DEPLOY_TRANSACTION, err)
@@ -446,7 +447,9 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 
 	log.Info("deploy tx code:", BytesToHexString(ret))
 	log.Info("deploy tx Hash:", BytesToHexString(hash.Bytes()))
-	
+	address, _ := hash.ToAddress()
+	log.Info("deploy tx Address:", address)
+
 	return nil
 }
 
@@ -464,7 +467,7 @@ func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCach
 	}
 
 	constractState := state.(*states.ContractState)
-	stateMachine := blockchain.NewStateMachine(dbCache, blockchain.NewDBCache(c))
+	stateMachine := blockchain.NewStateMachine(dbCache, dbCache)//blockchain.NewDBCache(c)
 	smartcontract, err := smartcontract.NewSmartContract(&smartcontract.Context{
 		Caller:         payloadInvoke.ProgramHash,
 		StateMachine:   stateMachine,
@@ -478,7 +481,7 @@ func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCach
 		Gas:            Fixed64(0),
 		ReturnType:     constractState.Code.ReturnType,
 		ParameterTypes: constractState.Code.ParameterTypes,
-		Trigger:      	smartcontract.Application,
+		Trigger:      	vm.Application,
 	})
 	if err != nil {
 		httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), INVOKE_TRANSACTION, err)
@@ -487,6 +490,7 @@ func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCach
 	ret, err := smartcontract.InvokeContract()
 	log.Info("InvokeContract ret=", ret)
 	stateMachine.CloneCache.Commit()
+	dbCache.Commit()
 	httpwebsocket.PushResult(tx.Hash(), int64(Success), INVOKE_TRANSACTION, ret)
 	return nil
 }
