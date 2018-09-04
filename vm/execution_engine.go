@@ -4,7 +4,7 @@ import (
 	"io"
 	_ "math/big"
 	_ "sort"
-	
+
 	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/utils"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/errors"
@@ -15,7 +15,7 @@ import (
 const MAXSTEPS int = 1200
 
 func NewExecutionEngine(container interfaces.IDataContainer, crypto interfaces.ICrypto, maxSteps int,
-						table interfaces.IScriptTable, service IGeneralService, gas common.Fixed64) *ExecutionEngine {
+						table interfaces.IScriptTable, service IGeneralService, gas common.Fixed64, trigger TriggerType) *ExecutionEngine {
 	var engine ExecutionEngine
 
 	engine.crypto = crypto
@@ -39,7 +39,7 @@ func NewExecutionEngine(container interfaces.IDataContainer, crypto interfaces.I
 		engine.service.MergeMap(service.GetServiceMap())
 	}
 
-
+	engine.trigger = trigger
 	engine.gas = gas.IntValue()
 	return &engine
 }
@@ -64,6 +64,11 @@ type ExecutionEngine struct {
 	//current opcode
 	opCode OpCode
 	gas    int64
+	trigger TriggerType
+}
+
+func (e *ExecutionEngine) GetTrigger() TriggerType {
+	return e.trigger
 }
 
 func (e *ExecutionEngine) GetDataContainer() interfaces.IDataContainer {
@@ -166,7 +171,6 @@ func (e *ExecutionEngine) StepInto() error {
 		}
 		opCode = OpCode(op)
 	}
-
 	e.opCount++
 	state, err := e.ExecuteOp(OpCode(opCode), context)
 	switch state {
