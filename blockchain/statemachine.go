@@ -235,7 +235,7 @@ func (s *StateMachine) StorageGet(engine *vm.ExecutionEngine) bool {
 		return false;
 	}
 	context := opInterface.(*StorageContext)
-	if exist, err := s.CheckStorageContext(context); !exist {
+	if exist, err := s.CheckStorageContext(context); !exist && err.Error() != "leveldb: not found" {
 		fmt.Println(err)
 		return false
 	}
