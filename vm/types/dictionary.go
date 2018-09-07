@@ -15,7 +15,6 @@ func NewDictionary() *Dictionary {
 	return &dictionary;
 }
 
-
 func (dic *Dictionary) GetValue(key StackItem) StackItem {
 	for temp := range dic.dic {
 		if temp.Equals(key) {
@@ -23,6 +22,30 @@ func (dic *Dictionary) GetValue(key StackItem) StackItem {
 		}
 	}
 	return nil
+}
+
+func (dic *Dictionary) Remove(key StackItem) {
+	for temp := range dic.dic {
+		if temp.Equals(key) {
+			delete(dic.dic, temp)
+		}
+	}
+}
+
+func (dic *Dictionary) GetKeys() *Array {
+	items := make([]StackItem, 0)
+	for temp := range dic.dic {
+		items = append(items, temp)
+	}
+	return NewArray(items)
+}
+
+func (dic *Dictionary) GetValues() *Array  {
+	items := make([]StackItem, 0)
+	for temp := range dic.dic {
+		items = append(items, dic.dic[temp])
+	}
+	return NewArray(items)
 }
 
 func (dic *Dictionary) Equals(other StackItem) bool {

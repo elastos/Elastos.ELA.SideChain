@@ -119,13 +119,18 @@ var (
 		PICKITEM:  {PICKITEM, "PICKITEM", opPickItem},
 		SETITEM:   {SETITEM, "SETITEM", opSetItem},
 		NEWARRAY:  {NEWARRAY, "NEWARRAY", opNewArray},
+		REVERSE:   {REVERSE, "REVERSE", opReverse},
+		REMOVE:	   {REMOVE, "REMOVE", opRemove},
+		HASKEY:    {HASKEY, "HASKEY", opHasKey},
+		KEYS:      {KEYS, "KEYS", opKeys},
+		VALUES:    {VALUES, "VALUES", opValues},
 
 		//Stack isolation
 		CALL_I:   {CALL_I, "CALL_I", opCallI},
 		CALL_E:   {CALL_E, "CALL_E", opCallE},
-		CALL_ED:  {CALL_E, "CALL_E", opCallE},
-		CALL_ET:  {CALL_E, "CALL_E", opCallE},
-		CALL_EDT: {CALL_E, "CALL_E", opCallE},
+		CALL_ED:  {CALL_ED, "CALL_E", opCallE},
+		CALL_ET:  {CALL_ET, "CALL_E", opCallE},
+		CALL_EDT: {CALL_EDT, "CALL_E", opCallE},
 
 		NEWSTRUCT: {NEWSTRUCT, "NEWSTRUCT", opNewArray},
 		//Map
