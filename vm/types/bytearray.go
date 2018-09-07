@@ -66,3 +66,7 @@ func (ba *ByteArray) GetArray() []StackItem {
 func (ba *ByteArray) Bytes() []byte {
 	return ba.GetByteArray()
 }
+
+func (ba *ByteArray) GetMap() map[StackItem]StackItem {
+	return nil
+}

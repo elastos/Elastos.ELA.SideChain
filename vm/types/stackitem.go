@@ -12,4 +12,5 @@ type StackItem interface {
 	GetByteArray() []byte
 	GetInterface() interfaces.IGeneralInterface
 	GetArray() []StackItem
+	GetMap() map[StackItem]StackItem
 }

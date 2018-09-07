@@ -44,7 +44,11 @@ func (a *Array) GetBoolean() bool{
 }
 
 func (a *Array) GetByteArray() []byte{
-	return []byte{}
+	data := []byte{}
+	for i := 0; i < len(a.items); i++ {
+		data = append(data, a.items[i].GetByteArray()...)
+	}
+	return data
 }
 
 func (a *Array) GetInterface() interfaces.IGeneralInterface {
@@ -53,4 +57,8 @@ func (a *Array) GetInterface() interfaces.IGeneralInterface {
 
 func (a *Array) GetArray() []StackItem{
 	return a.items
+}
+
+func (a *Array) GetMap() map[StackItem]StackItem {
+	return nil
 }

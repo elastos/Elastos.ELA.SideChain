@@ -77,12 +77,15 @@ func opPickItem(e *ExecutionEngine) (VMState, error) {
 	//	return FAULT, err
 	//}
 	//return NONE, nil
-
-	index := PopInt(e)
+	key := PopStackItem(e)
 	itemArr := PopStackItem(e)
 	if _, ok := itemArr.(*types.Array); ok {
+		index := key.GetBigInteger()
 		items := itemArr.GetArray()
-		PushData(e, items[index])
+		PushData(e, items[index.Int64()])
+	}else if _,ok := itemArr.(*types.Dictionary); ok {
+		items := itemArr.(*types.Dictionary).GetValue(key)
+		PushData(e, items)
 	} else {
 		//put bytearray, if not the data is error. some publickey
 		items := itemArr.GetByteArray()
@@ -96,14 +99,18 @@ func opSetItem(e *ExecutionEngine) (VMState, error) {
 		return FAULT, errors.New("evaluationStack error")
 	}
 	newItem := PopStackItem(e)
-	index := PopInt(e)
+	key := PopStackItem(e)
 	itemArr := PopStackItem(e)
 	if _, ok := itemArr.(*types.Array); ok {
+		index := key.GetBigInteger();
 		items := itemArr.GetArray()
-		items[index] = newItem
+		items[index.Int64()] = newItem
+	} else if _,ok := itemArr.(*types.Dictionary); ok {
+		itemArr.(*types.Dictionary).PutStackItem(key, newItem)
 	} else {
 		items := itemArr.GetByteArray()
-		items[index] = newItem.GetByteArray()[0]
+		index := key.GetBigInteger();
+		items[index.Int64()] = newItem.GetByteArray()[0]
 	}
 	return NONE, nil
 }

@@ -103,7 +103,25 @@ func (s *StateReader) RuntimeGetTrigger(e *vm.ExecutionEngine) bool {
 }
 
 func (s *StateReader) RuntimeNotify(e *vm.ExecutionEngine) bool {
-	vm.PopStackItem(e)
+	item := vm.PopStackItem(e)
+
+	switch item.(type) {
+	case *types.Boolean:
+		fmt.Println(item.GetBoolean())
+	case *types.Integer:
+		fmt.Println(item.GetBigInteger())
+	case *types.ByteArray:
+		fmt.Println(item.GetByteArray())
+	case *types.GeneralInterface:
+		interop := item.GetInterface()
+		fmt.Println(interop)
+	case *types.Array:
+		items := item.GetArray();
+		for i := 0; i < len(items); i++ {
+			fmt.Println(items[i])
+		}
+
+	}
 	return true
 }
 

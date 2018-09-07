@@ -50,3 +50,7 @@ func (b *Boolean) GetInterface() interfaces.IGeneralInterface {
 func (b *Boolean) GetArray() []StackItem {
 	return []StackItem{b}
 }
+
+func (a *Boolean) GetMap() map[StackItem]StackItem {
+	return nil
+}
