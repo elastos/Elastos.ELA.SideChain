@@ -8,7 +8,6 @@ import (
 
 	"github.com/elastos/Elastos.ELA.SideChain/vm"
 	"github.com/elastos/Elastos.ELA.SideChain/contract"
-	common2 "github.com/elastos/Elastos.ELA.SideChain/common"
 	"github.com/elastos/Elastos.ELA.SideChain/core"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/types"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
@@ -168,11 +167,11 @@ func (s *StateReader) CheckWitnessPublicKey(engine *vm.ExecutionEngine, publicKe
 	if err != nil {
 		return false, err
 	}
-	h, err := common2.ToCodeHash(c)
+	h, err := crypto.ToProgramHash(c)
 	if err != nil {
 		return false, err
 	}
-	return s.CheckWitnessHash(engine, h)
+	return s.CheckWitnessHash(engine, *h)
 }
 
 func (s *StateReader) RuntimeCheckWitness(e *vm.ExecutionEngine) bool {

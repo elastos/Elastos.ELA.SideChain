@@ -1,9 +1,11 @@
 package vm
 
 import (
-	"github.com/elastos/Elastos.ELA.SideChain/vm/utils"
-	"github.com/elastos/Elastos.ELA.SideChain/common"
 	"io"
+	
+	"github.com/elastos/Elastos.ELA.SideChain/vm/utils"
+
+	"github.com/elastos/Elastos.ELA.Utility/crypto"
 )
 
 type ExecutionContext struct {
@@ -36,7 +38,7 @@ func (ec *ExecutionContext) SetInstructionPointer(offset int) {
 
 func (ec* ExecutionContext) GetCodeHash() []byte {
 	if ec.CodeHash == nil {
-		hash, err := common.ToCodeHash(ec.Script)
+		hash, err := crypto.ToProgramHash(ec.Script)
 		if err != nil {
 			return nil
 		}

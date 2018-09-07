@@ -2,14 +2,10 @@ package common
 
 import (
 	"bytes"
-	"io"
-	"errors"
+	"encoding/binary"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
-	"crypto/sha256"
-	"golang.org/x/crypto/ripemd160"
-	"encoding/binary"
 )
 
 func GetGenesisAddress(genesisHash common.Uint256) (string, error) {
@@ -27,20 +23,6 @@ func GetGenesisProgramHash(genesisHash common.Uint256) (*common.Uint168, error) 
 	buf.WriteByte(byte(common.CROSSCHAIN))
 
 	return crypto.ToProgramHash(buf.Bytes())
-}
-
-func ToCodeHash(code []byte) (common.Uint168, error) {
-	temp := sha256.Sum256(code)
-	md := ripemd160.New()
-	io.WriteString(md, string(temp[:]))
-	//todo confirm this prefix
-	f := md.Sum([]byte{common.PrefixStandard})
-
-	hash ,err := common.Uint168FromBytes(f)
-	if err != nil {
-		return common.Uint168{}, errors.New("[Common] , ToCodeHash err.")
-	}
-	return *hash, nil
 }
 
 func IntToBytes(n int) []byte {
