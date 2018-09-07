@@ -16,12 +16,13 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/store/leveldb"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract"
 	"github.com/elastos/Elastos.ELA.SideChain/servers/httpwebsocket"
-	"github.com/elastos/Elastos.ELA.SideChain/common"
+	"github.com/elastos/Elastos.ELA.SideChain/vm"
 	. "github.com/elastos/Elastos.ELA.SideChain/store"
 	. "github.com/elastos/Elastos.ELA.SideChain/errors"
 
+
 	. "github.com/elastos/Elastos.ELA.Utility/common"
-	"github.com/elastos/Elastos.ELA.SideChain/vm"
+	"github.com/elastos/Elastos.ELA.Utility/crypto"
 )
 
 const ValueNone = 0
@@ -437,19 +438,13 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 		return err
 	}
 
-	hash, err := common.ToCodeHash(ret)
+	hash, err := crypto.ToProgramHash(ret)
 	if err != nil {
 		httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), DEPLOY_TRANSACTION, err)
 		return err
 	}
 	httpwebsocket.PushResult(tx.Hash(), int64(Success), DEPLOY_TRANSACTION, BytesToHexString(hash.Bytes()))
 	dbCache.Commit()
-
-	log.Info("deploy tx code:", BytesToHexString(ret))
-	log.Info("deploy tx Hash:", BytesToHexString(hash.Bytes()))
-	address, _ := hash.ToAddress()
-	log.Info("deploy tx Address:", address)
-
 	return nil
 }
 

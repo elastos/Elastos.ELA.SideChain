@@ -4,7 +4,6 @@ import (
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
 	"errors"
 	"github.com/elastos/Elastos.ELA.SideChain/vm"
-	"github.com/elastos/Elastos.ELA.SideChain/common"
 )
 
 //create a Single Singature contract for owner
@@ -18,19 +17,19 @@ func CreateSignatureContract(ownerPubKey *crypto.PublicKey) (*Contract, error) {
 	if err != nil {
 		return nil, errors.New(msg)
 	}
-	hash, err := common.ToCodeHash(temp)
+	hash, err := crypto.ToProgramHash(temp)
 	if err != nil {
 		return nil, errors.New(msg)
 	}
-	signatureReedScriptToCodeHash, err := common.ToCodeHash(signatureReedScript)
+	signatureReedScriptToCodeHash, err := crypto.ToProgramHash(signatureReedScript)
 	if err != nil {
 		return nil, errors.New(msg)
 	}
 	return &Contract{
 		Code: signatureReedScript,
 		Parameters: []ContractParameterType{Signature},
-		ProgramHash: signatureReedScriptToCodeHash,
-		OwnerPubkeyHash: hash,
+		ProgramHash: *signatureReedScriptToCodeHash,
+		OwnerPubkeyHash: *hash,
 	}, nil
 }
 

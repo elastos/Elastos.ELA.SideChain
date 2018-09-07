@@ -4,10 +4,10 @@ import (
 	"io"
 	"fmt"
 
+	"github.com/elastos/Elastos.ELA.Utility/crypto"
 	"github.com/elastos/Elastos.ELA.Utility/common"
 
 	"github.com/elastos/Elastos.ELA.SideChain/log"
-	. "github.com/elastos/Elastos.ELA.SideChain/common"
 )
 
 type FunctionCode struct {
@@ -82,12 +82,12 @@ func (fc *FunctionCode) GetReturnType() ContractParameterType {
 func (fc *FunctionCode) CodeHash() common.Uint168 {
 	zeroHash := common.Uint168{}
 	if fc.codeHash == zeroHash {
-		hash, err := ToCodeHash(fc.Code)
+		hash, err := crypto.ToProgramHash(fc.Code)
 		if err != nil {
 			log.Debug( fmt.Sprintf("[FunctionCode] ToCodeHash err=%s",err) )
-			return hash
+			return *hash
 		}
-		fc.codeHash = hash
+		fc.codeHash = *hash
 	}
 	return fc.codeHash
 }
