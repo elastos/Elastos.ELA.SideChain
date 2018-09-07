@@ -64,8 +64,8 @@ func PowCheckBlockSanity(block *Block, powLimit *big.Int, timeSource MedianTimeS
 	}
 
 	transactions := block.Transactions
-	var rewardInCoinbase = Fixed64(0)
-	var totalTxFee = Fixed64(0)
+	var rewardInCoinbase = big.NewInt(0)
+	var totalTxFee = big.NewInt(0)
 	for index, tx := range transactions {
 		// The first transaction in a block must be a coinbase.
 		if index == 0 {
@@ -74,7 +74,7 @@ func PowCheckBlockSanity(block *Block, powLimit *big.Int, timeSource MedianTimeS
 			}
 			// Calculate reward in coinbase
 			for _, output := range tx.Outputs {
-				rewardInCoinbase += output.Value
+				rewardInCoinbase.Add(rewardInCoinbase, big.NewInt(int64(output.Value)))
 			}
 			continue
 		}
@@ -85,11 +85,11 @@ func PowCheckBlockSanity(block *Block, powLimit *big.Int, timeSource MedianTimeS
 		}
 
 		// Calculate transaction fee
-		totalTxFee += GetTxFee(tx, DefaultLedger.Blockchain.AssetID)
+		totalTxFee.Add(totalTxFee, GetTxFee(tx, DefaultLedger.Blockchain.AssetID))
 	}
 
 	// Reward in coinbase must match total transaction fee
-	if rewardInCoinbase != totalTxFee {
+	if rewardInCoinbase.Cmp(totalTxFee) != 0 {
 		return errors.New("[PowCheckBlockSanity] reward amount in coinbase not correct")
 	}
 

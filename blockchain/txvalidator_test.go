@@ -293,8 +293,8 @@ func TestCheckAmountPrecision(t *testing.T) {
 	for i := 8; i >= 0; i-- {
 		amount := common.Fixed64(math.Pow(10, float64(i)))
 		t.Logf("Amount %s", amount.String())
-		assert.Equal(t, true, checkAmountPrecise(amount, byte(8-i)))
-		assert.Equal(t, false, checkAmountPrecise(amount, byte(8-i-1)))
+		assert.Equal(t, true, checkAmountPrecise(amount, byte(8-i), 8))
+		assert.Equal(t, false, checkAmountPrecise(amount, byte(8-i-1), 8))
 	}
 	t.Log("[TestCheckAmountPrecision] PASSED")
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math/big"
 	"sync"
 
 	"github.com/elastos/Elastos.ELA.SideChain/config"
@@ -52,7 +53,7 @@ func (pool *TxPool) AppendToTxnPool(txn *core.Transaction) ErrCode {
 		return errCode
 	}
 
-	txn.Fee = GetTxFee(txn, DefaultLedger.Blockchain.AssetID)
+	txn.Fee = Fixed64(GetTxFee(txn, DefaultLedger.Blockchain.AssetID).Int64())
 	buf := new(bytes.Buffer)
 	txn.Serialize(buf)
 	txn.FeePerKB = txn.Fee * 1000 / Fixed64(len(buf.Bytes()))
@@ -369,17 +370,17 @@ func (pool *TxPool) RemoveTransaction(txn *core.Transaction) {
 	}
 }
 
-func GetTxFee(tx *core.Transaction, assetId Uint256) Fixed64 {
+func GetTxFee(tx *core.Transaction, assetId Uint256) *big.Int {
 	feeMap, err := GetTxFeeMap(tx)
 	if err != nil {
-		return 0
+		return big.NewInt(0)
 	}
 
 	return feeMap[assetId]
 }
 
-func GetTxFeeMap(tx *core.Transaction) (map[Uint256]Fixed64, error) {
-	feeMap := make(map[Uint256]Fixed64)
+func GetTxFeeMap(tx *core.Transaction) (map[Uint256]*big.Int, error) {
+	feeMap := make(map[Uint256]*big.Int)
 
 	if tx.IsRechargeToSideChainTx() {
 		depositPayload := tx.Payload.(*core.PayloadRechargeToSideChain)
@@ -402,9 +403,11 @@ func GetTxFeeMap(tx *core.Transaction) (map[Uint256]Fixed64, error) {
 
 					amount, ok := feeMap[v.AssetID]
 					if ok {
-						feeMap[v.AssetID] = amount + Fixed64(float64(mcAmount)*config.Parameters.ExchangeRate) - v.Value
+						amount.Add(amount, big.NewInt(int64(float64(mcAmount)*config.Parameters.ExchangeRate)))
+						feeMap[v.AssetID] = amount.Sub(amount, big.NewInt(int64(v.Value)))
 					} else {
-						feeMap[v.AssetID] = Fixed64(float64(mcAmount)*config.Parameters.ExchangeRate) - v.Value
+						value := big.NewInt(int64(float64(mcAmount) * config.Parameters.ExchangeRate))
+						feeMap[v.AssetID] = value.Sub(value, big.NewInt(int64(v.Value)))
 					}
 				}
 			}
@@ -418,37 +421,63 @@ func GetTxFeeMap(tx *core.Transaction) (map[Uint256]Fixed64, error) {
 		return nil, err
 	}
 
-	var inputs = make(map[Uint256]Fixed64)
-	var outputs = make(map[Uint256]Fixed64)
+	var inputs = make(map[Uint256]big.Int)
+	var outputs = make(map[Uint256]big.Int)
 	for _, v := range reference {
-		amout, ok := inputs[v.AssetID]
-		if ok {
-			inputs[v.AssetID] = amout + v.Value
+		value := big.Int{}
+		if v.AssetID.IsEqual(DefaultLedger.Blockchain.AssetID) {
+			value = *big.NewInt(int64(v.Value))
 		} else {
-			inputs[v.AssetID] = v.Value
+			value = v.TokenValue
+		}
+
+		amount, ok := inputs[v.AssetID]
+		if ok {
+			inputs[v.AssetID] = *amount.Add(&amount, &value)
+		} else {
+			inputs[v.AssetID] = value
 		}
 	}
 
 	for _, v := range tx.Outputs {
-		amout, ok := outputs[v.AssetID]
-		if ok {
-			outputs[v.AssetID] = amout + v.Value
+		value := big.Int{}
+		if v.AssetID.IsEqual(DefaultLedger.Blockchain.AssetID) {
+			value = *big.NewInt(int64(v.Value))
 		} else {
-			outputs[v.AssetID] = v.Value
+			value = v.TokenValue
+		}
+
+		amount, ok := outputs[v.AssetID]
+		if ok {
+			outputs[v.AssetID] = *amount.Add(&amount, &value)
+		} else {
+			outputs[v.AssetID] = value
 		}
 	}
 
 	//calc the balance of input vs output
 	for outputAssetid, outputValue := range outputs {
 		if inputValue, ok := inputs[outputAssetid]; ok {
-			feeMap[outputAssetid] = inputValue - outputValue
+			feeMap[outputAssetid] = inputValue.Sub(&inputValue, &outputValue)
 		} else {
-			feeMap[outputAssetid] -= outputValue
+			value, ok := feeMap[outputAssetid]
+			if ok {
+				feeMap[outputAssetid] = value.Sub(value, &outputValue)
+			} else {
+				val := big.NewInt(0)
+				feeMap[outputAssetid] = val.Sub(val, &outputValue)
+			}
 		}
 	}
 	for inputAssetid, inputValue := range inputs {
 		if _, exist := feeMap[inputAssetid]; !exist {
-			feeMap[inputAssetid] += inputValue
+			value, ok := feeMap[inputAssetid]
+			if ok {
+				feeMap[inputAssetid] = value.Add(value, &inputValue)
+			} else {
+				val := big.NewInt(0)
+				feeMap[inputAssetid] = val.Add(value, &inputValue)
+			}
 		}
 	}
 	return feeMap, nil

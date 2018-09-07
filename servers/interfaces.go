@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"time"
 
 	chain "github.com/elastos/Elastos.ELA.SideChain/blockchain"
@@ -50,6 +51,7 @@ func GetTransactionInfo(header *Header, tx *Transaction) *TransactionInfo {
 	outputs := make([]OutputInfo, len(tx.Outputs))
 	for i, v := range tx.Outputs {
 		outputs[i].Value = v.Value.String()
+		outputs[i].TokenValue = v.TokenValue.String()
 		outputs[i].Index = uint32(i)
 		var address string
 		destroyHash := Uint168{}
@@ -622,6 +624,10 @@ func SendRawTransaction(param Params) map[string]interface{} {
 		return ResponsePack(InvalidTransaction, "transaction deserialize error")
 	}
 
+	for _, v := range txn.Outputs {
+		log.Info("v.TokenValue:", v.TokenValue.String())
+	}
+
 	if errCode := VerifyAndSendTx(&txn); errCode != Success {
 		return ResponsePack(errCode, errCode.Message())
 	}
@@ -1050,7 +1056,8 @@ func getPayloadInfo(p Payload) PayloadInfo {
 	case *PayloadRegisterAsset:
 		obj := new(RegisterAssetInfo)
 		obj.Asset = object.Asset
-		obj.Amount = object.Amount.String()
+		value := big.NewInt(int64(object.Amount))
+		obj.Amount = value.Mul(value, big.NewInt(1000000000000000000)).String()
 		obj.Controller = BytesToHexString(BytesReverse(object.Controller.Bytes()))
 		return obj
 	case *PayloadTransferCrossChainAsset:

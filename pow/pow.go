@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"math"
+	"math/big"
 	"math/rand"
 	"sort"
 	"sync"
@@ -167,11 +168,11 @@ func (pow *PowService) GenerateBlock(addr string) (*core.Block, error) {
 		}
 
 		fee := GetTxFee(tx, DefaultLedger.Blockchain.AssetID)
-		if fee != tx.Fee {
+		if fee.Cmp(big.NewInt(int64(tx.Fee))) != 0 {
 			continue
 		}
 		msgBlock.Transactions = append(msgBlock.Transactions, tx)
-		totalFee += fee
+		totalFee += common.Fixed64(fee.Int64())
 		txCount++
 	}
 

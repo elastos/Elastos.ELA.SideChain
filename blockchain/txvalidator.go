@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/big"
 
 	"github.com/elastos/Elastos.ELA.SideChain/common"
 	"github.com/elastos/Elastos.ELA.SideChain/config"
@@ -124,10 +125,17 @@ func CheckTransactionContext(txn *core.Transaction) ErrCode {
 			return ErrUnknownReferedTxn
 		}
 		referTxnOut := referTxn.Outputs[referTxnOutIndex]
-		if referTxnOut.Value <= 0 {
-			log.Warn("Value of referenced transaction output is invalid")
-			return ErrInvalidReferedTxn
+		if referTxnOut.AssetID.IsEqual(DefaultLedger.Blockchain.AssetID) {
+			if referTxnOut.Value <= 0 {
+				log.Warn("Value of referenced transaction output is invalid")
+				return ErrInvalidReferedTxn
+			}
+		} else {
+			if referTxnOut.TokenValue.Sign() <= 0 {
+				log.Warn("TokenValue of referenced transaction output is invalid")
+			}
 		}
+
 		// coinbase transaction only can be spent after got SpendCoinbaseSpan times confirmations
 		if referTxn.IsCoinBaseTx() {
 			lockHeight := referTxn.LockTime
@@ -286,8 +294,14 @@ func CheckAssetPrecision(txn *core.Transaction) error {
 		}
 		precision := asset.Precision
 		for _, output := range outputs {
-			if !checkAmountPrecise(output.Value, precision) {
-				return errors.New("The precision of asset is incorrect.")
+			if output.AssetID.IsEqual(DefaultLedger.Blockchain.AssetID) {
+				if !checkAmountPrecise(output.Value, precision, 8) {
+					return errors.New("Invalide ela asset value,out of precise.")
+				}
+			} else {
+				if !checkAmountPrecise(output.Value, precision, 18) {
+					return errors.New("Invalide asset value,out of precise.")
+				}
 			}
 		}
 	}
@@ -296,20 +310,27 @@ func CheckAssetPrecision(txn *core.Transaction) error {
 
 func CheckTransactionBalance(txn *core.Transaction) error {
 	for _, v := range txn.Outputs {
-		if v.Value < Fixed64(0) {
-			return errors.New("Invalide transaction UTXO output.")
+		if v.AssetID.IsEqual(DefaultLedger.Blockchain.AssetID) {
+			if v.Value < Fixed64(0) {
+				return errors.New("Invalide transaction UTXO output Value.")
+			}
+		} else {
+			if v.TokenValue.Sign() < 0 {
+				return errors.New("Invalide transaction UTXO output TokenValue.")
+			}
 		}
+
 	}
 	results, err := GetTxFeeMap(txn)
 	if err != nil {
 		return err
 	}
 	for assetID, totalFeeOfAsset := range results {
-		if assetID == DefaultLedger.Blockchain.AssetID {
-			if totalFeeOfAsset < Fixed64(config.Parameters.PowConfiguration.MinTxFee) {
+		if assetID.IsEqual(DefaultLedger.Blockchain.AssetID) {
+			if totalFeeOfAsset.Cmp(big.NewInt(int64(config.Parameters.PowConfiguration.MinTxFee))) < 0 {
 				return fmt.Errorf("Transaction fee not enough")
 			}
-		} else if txn.TxType != core.RegisterAsset && totalFeeOfAsset != Fixed64(0) {
+		} else if txn.TxType != core.RegisterAsset && totalFeeOfAsset.Sign() != 0 {
 			return fmt.Errorf("Transaction token asset fee should be 0")
 		}
 	}
@@ -345,8 +366,8 @@ func CheckTransactionSignature(txn *core.Transaction) error {
 	return VerifySignature(txn)
 }
 
-func checkAmountPrecise(amount Fixed64, precision byte) bool {
-	return amount.IntValue()%int64(math.Pow(10, float64(8-precision))) == 0
+func checkAmountPrecise(amount Fixed64, precision byte, assetPrecision byte) bool {
+	return amount.IntValue()%int64(math.Pow(10, float64(assetPrecision-precision))) == 0
 }
 
 func CheckTransactionPayload(txn *core.Transaction) error {
@@ -355,9 +376,17 @@ func CheckTransactionPayload(txn *core.Transaction) error {
 		if pld.Asset.Precision < core.MinPrecision || pld.Asset.Precision > core.MaxPrecision {
 			return errors.New("Invalide asset Precision.")
 		}
-		if !checkAmountPrecise(pld.Amount, pld.Asset.Precision) {
-			return errors.New("Invalide asset value,out of precise.")
+		txHash := txn.Hash()
+		if txHash.IsEqual(DefaultLedger.Blockchain.AssetID) {
+			if !checkAmountPrecise(pld.Amount, pld.Asset.Precision, 8) {
+				return errors.New("Invalide ela asset value,out of precise.")
+			}
+		} else {
+			if !checkAmountPrecise(pld.Amount, pld.Asset.Precision, 18) {
+				return errors.New("Invalide asset value,out of precise.")
+			}
 		}
+
 	case *core.PayloadTransferAsset:
 	case *core.PayloadRecord:
 	case *core.PayloadCoinBase:
@@ -544,18 +573,27 @@ func CheckRegisterAssetTransaction(txn *core.Transaction) error {
 	}
 
 	//amount and program hash should be same in output and payload
-	var totalToken Fixed64
+	totalToken := big.NewInt(0)
 	for _, output := range txn.Outputs {
 		if output.AssetID.IsEqual(payload.Asset.Hash()) {
 			if !output.ProgramHash.IsEqual(payload.Controller) {
 				return fmt.Errorf("Register asset program hash not same as program hash in payload")
 			}
-			totalToken += output.Value
+			totalToken.Add(totalToken, &output.TokenValue)
 		}
 	}
-	if totalToken != payload.Amount {
+	regAmount := big.NewInt(int64(payload.Amount))
+	regAmount.Mul(regAmount, getPrecisionBigInt())
+
+	if totalToken.Cmp(regAmount) != 0 {
 		return fmt.Errorf("Invalid register asset amount")
 	}
 
 	return nil
+}
+
+func getPrecisionBigInt() *big.Int {
+	value := big.Int{}
+	value.SetString("1000000000000000000", 10)
+	return &value
 }
