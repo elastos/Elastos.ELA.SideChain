@@ -124,3 +124,63 @@ func opNewArray(e *ExecutionEngine) (VMState, error) {
 	PushData(e, items)
 	return NONE, nil
 }
+
+func opAppend(e *ExecutionEngine) (VMState, error) {
+	newItem := PopStackItem(e)
+	itemArr := PopStackItem(e)
+	if _, ok := itemArr.(*types.Array); ok {
+		items := itemArr.GetArray()
+		items = append(items, newItem)
+	} else {
+		return  FAULT, errors.New("opAppend data error")
+	}
+	return NONE, nil
+}
+
+func opReverse(e *ExecutionEngine) (VMState, error) {
+	items := PopStackItem(e)
+	if _, ok := items.(*types.Array); ok {
+		items.(*types.Array).Reverse()
+	} else {
+		return FAULT, errors.New("opReverse type error")
+	}
+	return NONE, nil
+}
+
+func opRemove(e *ExecutionEngine) (VMState, error) {
+	key := PopStackItem(e)
+	itemArr := PopStackItem(e)
+	if _, ok := itemArr.(*types.Array); ok {
+		items := itemArr.(*types.Array).GetArray()
+		index := key.GetBigInteger().Int64()
+		if index < 0 || int(index) >= len(items) {
+			return FAULT, errors.New("opRemove index error")
+		}
+		items = append(items[:index], items[index + 1:]...)
+	} else if _,ok := itemArr.(*types.Dictionary); ok {
+		items := itemArr.(*types.Dictionary)
+		items.Remove(key)
+	} else {
+		return FAULT, errors.New("opRemove type error")
+	}
+	return NONE, nil
+}
+
+func opHasKey(e *ExecutionEngine) (VMState, error) {
+	key := PopStackItem(e)
+	itemArr := PopStackItem(e)
+	if _, ok := itemArr.(*types.Array); ok {
+		index := key.GetBigInteger().Int64()
+		if index < 0 {
+			return FAULT, errors.New("opHasKey index error")
+		}
+		items := itemArr.(*types.Array).GetArray()
+		pushData(e, int(index) < len(items))
+	} else if _,ok := itemArr.(*types.Dictionary); ok {
+		items := itemArr.(*types.Dictionary)
+		pushData(e, items.GetValue(key) != nil)
+	} else {
+		return FAULT, errors.New("opHasKey type error")
+	}
+	return NONE, nil
+}

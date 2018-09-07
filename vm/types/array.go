@@ -62,3 +62,12 @@ func (a *Array) GetArray() []StackItem{
 func (a *Array) GetMap() map[StackItem]StackItem {
 	return nil
 }
+
+func (a *Array) Reverse() {
+	l := len(a.items)
+	items :=  make([]StackItem,0)
+	for i := l -1; i >= 0; i-- {
+		items = append(items, a.items[i])
+	}
+	a.items = items;
+}
