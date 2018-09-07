@@ -51,3 +51,7 @@ func (i *Integer) GetInterface() interfaces.IGeneralInterface {
 func (i *Integer) GetArray() []StackItem {
 	return []StackItem{i}
 }
+
+func (i *Integer) GetMap() map[StackItem]StackItem {
+	return nil
+}

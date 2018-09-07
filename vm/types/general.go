@@ -45,3 +45,7 @@ func (ii *GeneralInterface) GetArray() []StackItem {
 func (ii *GeneralInterface) Bytes() []byte {
 	return ii.GetByteArray();
 }
+
+func (ii *GeneralInterface) GetMap() map[StackItem]StackItem {
+	return nil
+}
