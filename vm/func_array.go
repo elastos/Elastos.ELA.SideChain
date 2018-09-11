@@ -9,10 +9,19 @@ func opArraySize(e *ExecutionEngine) (VMState, error) {
 	if e.evaluationStack.Count() < 1 {
 		return FAULT, nil
 	}
-	arr := AssertStackItem(e.evaluationStack.Pop()).GetArray()
-	err := pushData(e, len(arr))
-	if err != nil {
-		return FAULT, err
+	itemArr := PopStackItem(e)
+	if _, ok := itemArr.(*types.Array); ok {
+		arr := itemArr.GetArray();
+		err := pushData(e, len(arr))
+		if err != nil {
+			return FAULT, err
+		}
+	} else if _, ok := itemArr.(*types.ByteArray); ok {
+		arr := itemArr.GetByteArray();
+		err := pushData(e, len(arr))
+		if err != nil {
+			return FAULT, err
+		}
 	}
 	return NONE, nil
 }
