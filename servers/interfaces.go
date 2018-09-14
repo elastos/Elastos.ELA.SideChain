@@ -17,6 +17,7 @@ import (
 	. "github.com/elastos/Elastos.ELA.SideChain/protocol"
 
 	. "github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.SideChain/vm"
 )
 
 const (
@@ -476,6 +477,24 @@ func DiscreteMining(param Params) map[string]interface{} {
 		ret[i] = ToReversedString(*hash)
 	}
 
+	return ResponsePack(Success, ret)
+}
+
+func InvokeScript(param Params) map[string]interface{} {
+	script, ok := param.String("code")
+	if !ok {
+		return ResponsePack(InvalidParams, "")
+	}
+	code, err := HexStringToBytes(script)
+	if err != nil {
+		return ResponsePack(InvalidParams, "")
+	}
+	engine := RunScript(code)
+	var ret map[string]interface{}
+	ret = make(map[string]interface{})
+	ret["state"] = engine.GetState()
+	ret["gas_consumed"] = engine.GetGasConsumed()
+	ret["result"] = BytesToHexString(vm.PopByteArray(engine))
 	return ResponsePack(Success, ret)
 }
 

@@ -19,6 +19,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/store/chain_store"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.SideChain/store/leveldb"
 )
 
 const (
@@ -37,6 +38,15 @@ func init() {
 	} else {
 		coreNum = DefaultMultiCoreNum
 	}
+
+	st, err := leveldb.NewLevelDB("testStore")
+	if err != nil {
+		return
+	}
+	store := &chain_store.ChainStore{
+		IStore:             st,
+	}
+	servers.Store = store
 
 	address, err := common.Uint168FromAddress(config.Parameters.FoundationAddress)
 	if err != nil {
