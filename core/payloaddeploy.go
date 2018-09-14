@@ -17,6 +17,7 @@ type PayloadDeploy struct {
 	Email       string
 	Description string
 	ProgramHash common.Uint168
+	Gas         common.Fixed64
 }
 
 func (dc *PayloadDeploy) Data(version byte) []byte  {
@@ -61,6 +62,11 @@ func (dc *PayloadDeploy) Serialize(w io.Writer, version byte) error {
 	}
 
 	err = dc.ProgramHash.Serialize(w)
+	if err != nil {
+		return err
+	}
+
+	err = dc.Gas.Serialize(w)
 	if err != nil {
 		return err
 	}
@@ -110,6 +116,13 @@ func (dc *PayloadDeploy) Deserialize(r io.Reader, version byte) error {
 	if err != nil {
 		return err
 	}
+
+	gas := common.Fixed64(0)
+	err = gas.Deserialize(r)
+	if err != nil {
+		return err
+	}
+	dc.Gas = gas
 
 	return nil
 }

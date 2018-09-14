@@ -10,6 +10,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/vm/errors"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.SideChain/log"
 )
 
 const (
@@ -161,6 +162,7 @@ func (e *ExecutionEngine) Execute() error {
 		}
 		err := e.StepInto()
 		if err != nil {
+			log.Info("contract execute failed:",err)
 			return err
 		}
 	}
@@ -340,10 +342,9 @@ func (e *ExecutionEngine) getPriceForSysCall() int64 {
 		return 1
 	}
 	l := int(context.Script[i+1])
-	if i >= c - l - 2 {
+	if i > c - l - 2 {
 		return 1
 	}
-
 	name := string(context.Script[i+2: i + 2 + l])
 	switch name {
 	case "Neo.Runtime.CheckWitness":
