@@ -12,7 +12,16 @@ import (
 	"github.com/elastos/Elastos.ELA.Utility/common"
 )
 
-const MAXSTEPS int = 1200
+const (
+	 MAXSTEPS = 1200
+	ratio = 100000
+	gasFree = 10 * 100000000;
+
+	StackLimit       uint32 = 2*1024
+	MaxStackSize     uint32 = 1024
+	MaxItemSize      uint32 = 1024*1024
+	MaxArraySize     uint32 = 1024
+)
 
 func NewExecutionEngine(container interfaces.IDataContainer, crypto interfaces.ICrypto, maxSteps int,
 						table interfaces.IScriptTable, service IGeneralService, gas common.Fixed64, trigger TriggerType) *ExecutionEngine {
@@ -40,7 +49,8 @@ func NewExecutionEngine(container interfaces.IDataContainer, crypto interfaces.I
 	}
 
 	engine.trigger = trigger
-	engine.gas = gas.IntValue()
+	engine.gas = gas.IntValue() * 100000000 + gasFree
+	engine.gasConsumed = 0
 	return &engine
 }
 
@@ -64,7 +74,12 @@ type ExecutionEngine struct {
 	//current opcode
 	opCode OpCode
 	gas    int64
+	gasConsumed int64
 	trigger TriggerType
+}
+
+func (e *ExecutionEngine) GetGasConsumed() int64 {
+	return e.gasConsumed
 }
 
 func (e *ExecutionEngine) GetTrigger() TriggerType {
@@ -113,7 +128,10 @@ func (e *ExecutionEngine) Create(caller common.Uint168, code []byte) ([]byte, er
 
 func (e *ExecutionEngine) Call(caller common.Uint168, codeHash common.Uint168, input []byte) ([]byte, error) {
 	e.LoadScript(input, false)
-	e.Execute()
+	err := e.Execute()
+	if err != nil {
+		return nil, err
+	}
 	return nil, nil
 }
 
@@ -200,10 +218,21 @@ func (e *ExecutionEngine) ExecuteOp(opCode OpCode, context *ExecutionContext) (V
 	}
 	e.opCode = opCode
 	e.context = context
+
+	if !e.checkStackSize() {
+		return FAULT, errors.ErrOverLimitStack
+	}
+	price := e.getPrice() * ratio
+	e.gasConsumed += price
+	if e.gas < e.gasConsumed {
+		return FAULT, errors.ErrOutOfGas
+	}
+
 	opExec := OpExecList[opCode]
 	if opExec.Exec == nil {
 		return FAULT, errors.ErrNotSupportOpCode
 	}
+
 	state, err := opExec.Exec(e)
 	if err != nil || HALT == state || FAULT == state {
 		return state, err
@@ -245,4 +274,116 @@ func (e *ExecutionEngine) RemoveBreakPoint(position uint) bool {
 	//if e.invocationStack.Count() == 0 { return false }
 	//b := e.context.BreakPoints
 	return true
+}
+
+
+func (e *ExecutionEngine) checkStackSize() bool {
+	size := 0
+	if e.opCode < PUSH16 {
+		size = 1
+	} else {
+		switch e.opCode {
+		case DEPTH, DUP, OVER, TUCK:
+			size = 1
+		case UNPACK:
+			//item := Peek(e)
+			item := PeekStackItem(e)
+			if item == nil {
+				return false
+			}
+			size = len(item.GetArray())
+		}
+	}
+	size += e.evaluationStack.Count() + e.altStack.Count()
+	if uint32(size) > StackLimit {
+		return false
+	}
+	return true
+}
+
+func (e *ExecutionEngine) getPrice() int64 {
+	if e.opCode <= PUSH16 {
+		return 0
+	}
+	switch e.opCode {
+	case NOP:
+		return 0
+	case APPCALL, TAILCALL:
+		return 10
+	case SYSCALL:
+		return e.getPriceForSysCall()
+	case SHA1, SHA256:
+		return 10
+	case HASH160, HASH256:
+		return 20
+	case CHECKSIG:
+		return 100
+	case CHECKMULTISIG:
+		if e.evaluationStack.Count() == 0 {
+			return 1
+		}
+		n := PeekBigInteger(e).Int64()
+		if n < 1 {
+			return 1
+		}
+		return int64(100 * n)
+	default:
+		return 1
+	}
+}
+
+func (e *ExecutionEngine) getPriceForSysCall() int64 {
+	context := e.context
+	i := context.GetInstructionPointer() - 1
+	c := len(context.Script)
+	if i >= c - 3 {
+		return 1
+	}
+	l := int(context.Script[i+1])
+	if i >= c - l - 2 {
+		return 1
+	}
+
+	name := string(context.Script[i+2: i + 2 + l])
+	switch name {
+	case "Neo.Runtime.CheckWitness":
+		return 200
+	case "Neo.Blockchain.GetHeader":
+		return 100
+	case "Neo.Blockchain.GetBlock":
+		return 200
+	case "Neo.Blockchain.GetTransaction":
+		return 100
+	case "Neo.Blockchain.GetTransactionHeight":
+		return 100
+	case "Neo.Blockchain.GetAccount":
+		return 100
+	case "Neo.Blockchain.RegisterValidator":
+		return 1000 * 100000000 / ratio;
+	case "Neo.Blockchain.GetValidators":
+		return 200
+	case "Neo.Blockchain.CreateAsset":
+		return 5000 * 100000000 / ratio
+	case "Neo.Blockchain.GetAsset":
+		return 100
+	case "Neo.Contract.Create":
+		return 500 * 100000000 / ratio
+	case "Neo.Blockchain.GetContract":
+		return 100
+	case "Neo.Transaction.GetReferences":
+		return 200
+	case "Neo.Asset.Create":
+		return 5000 * 100000000 / ratio;
+	case "Neo.Asset.Renew":
+		return PeekBigInteger(e).Int64() * 5000 * 100000000 / ratio
+	case "Neo.Storage.Get":
+		return 100
+	case "Neo.Storage.Put":
+		price := ((len(PeekNByteArray(1, e)) + len(PeekNByteArray(2, e)) - 1) / 1024 + 1) * 1000;
+		return int64(price)
+	case "Neo.Storage.Delete":
+		return 100
+	default:
+		return 1
+	}
 }

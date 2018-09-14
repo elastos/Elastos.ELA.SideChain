@@ -20,7 +20,6 @@ import (
 	. "github.com/elastos/Elastos.ELA.SideChain/store"
 	. "github.com/elastos/Elastos.ELA.SideChain/errors"
 
-
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
 )
@@ -406,16 +405,6 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 	if !ok {
 		return errors.New("invalid deploy payload")
 	}
-	codeHash := payloadDeploy.Code.CodeHash()
-	dbCache.GetOrAdd(ST_Contract, string(codeHash.Bytes()), &states.ContractState{
-		Code:        payloadDeploy.Code,
-		Name:        payloadDeploy.Name,
-		Version:     payloadDeploy.CodeVersion,
-		Author:      payloadDeploy.Author,
-		Email:       payloadDeploy.Email,
-		Description: payloadDeploy.Description,
-		ProgramHash: payloadDeploy.ProgramHash,
-	})
 
 	smartcontract, err := smartcontract.NewSmartContract(&smartcontract.Context{
 		Caller:       payloadDeploy.ProgramHash,
@@ -432,18 +421,30 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 		return err
 	}
 
-	ret, err := smartcontract.DeployContract()
+	ret, err := smartcontract.DeployContract(payloadDeploy)
 	if err != nil {
 		httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), DEPLOY_TRANSACTION, err)
 		return err
 	}
-
 	hash, err := crypto.ToProgramHash(ret)
 	if err != nil {
 		httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), DEPLOY_TRANSACTION, err)
 		return err
 	}
+
+	codeHash := payloadDeploy.Code.CodeHash()
+	dbCache.GetOrAdd(ST_Contract, string(codeHash.Bytes()), &states.ContractState{
+		Code:        payloadDeploy.Code,
+		Name:        payloadDeploy.Name,
+		Version:     payloadDeploy.CodeVersion,
+		Author:      payloadDeploy.Author,
+		Email:       payloadDeploy.Email,
+		Description: payloadDeploy.Description,
+		ProgramHash: payloadDeploy.ProgramHash,
+	})
+
 	httpwebsocket.PushResult(tx.Hash(), int64(Success), DEPLOY_TRANSACTION, BytesToHexString(hash.Bytes()))
+
 	dbCache.Commit()
 	return nil
 }
@@ -473,7 +474,7 @@ func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCach
 		CacheCodeTable: NewCacheCodeTable(dbCache),
 		Time:           big.NewInt(int64(b.Timestamp)),
 		BlockNumber:    big.NewInt(int64(b.Height)),
-		Gas:            Fixed64(0),
+		Gas:            payloadInvoke.Gas,
 		ReturnType:     constractState.Code.ReturnType,
 		ParameterTypes: constractState.Code.ParameterTypes,
 		Trigger:      	vm.Application,
@@ -483,6 +484,11 @@ func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCach
 	}
 
 	ret, err := smartcontract.InvokeContract()
+	if err != nil {
+		log.Info("contract failed:", err)
+		httpwebsocket.PushResult(tx.Hash(), int64(OutOfGas), INVOKE_TRANSACTION, ret)
+		return err
+	}
 	log.Info("InvokeContract ret=", ret)
 	stateMachine.CloneCache.Commit()
 	dbCache.Commit()

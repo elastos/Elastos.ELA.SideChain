@@ -71,8 +71,19 @@ func NewSmartContract(context *Context) (*SmartContract, error) {
 	}, nil
 }
 
-func (sc *SmartContract) DeployContract() ([]byte, error) {
-	return sc.Engine.Create(sc.Caller, sc.Code)
+func (sc *SmartContract) DeployContract(payload *core.PayloadDeploy) ([]byte, error) {
+	buffer := new(bytes.Buffer)
+	paramBuilder := vm.NewParamsBuider(buffer)
+	var parameterTypes []byte
+	parameterTypes = contract.ContractParameterTypeToByte(payload.Code.ParameterTypes)
+	returnType := byte(payload.Code.ReturnType)
+	paramBuilder.EmitSysCall("Neo.Contract.Create", payload.Code.Code, parameterTypes, returnType, payload.Name,
+		payload.CodeVersion, payload.Author, payload.Email, payload.Description)
+	_ , err := sc.Engine.Call(sc.Caller, sc.CodeHash, paramBuilder.Bytes())
+	if err != nil {
+		return nil, err
+	}
+	return sc.Code, nil
 }
 
 func (sc *SmartContract) InvokeContract() (interface{}, error) {
