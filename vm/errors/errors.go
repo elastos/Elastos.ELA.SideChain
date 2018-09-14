@@ -9,4 +9,6 @@ var (
 	ErrFault    = errors.New("The exeution meet fault")
 
 	ErrNotSupportOpCode   = errors.New("does not support the operation code")
+	ErrOverLimitStack     = errors.New("the stack over max size")
+	ErrOutOfGas           = errors.New("out of gas")
 )

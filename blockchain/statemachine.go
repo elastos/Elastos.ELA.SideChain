@@ -151,11 +151,7 @@ func (s *StateMachine) CreateContract(engine *vm.ExecutionEngine) bool {
 		Email:       common.BytesToHexString(emailByte),
 		Description: common.BytesToHexString(descByte),
 	}
-	codeHash, err := common.Uint168FromBytes(codeByte)
-	if err != nil {
-		fmt.Println(err)
-		return false
-	}
+	codeHash := funcCode.CodeHash()
 	s.CloneCache.GetInnerCache().GetOrAdd(store.ST_Contract, string(codeHash.Bytes()), &contractState)
 	vm.PushData(engine, contractState)
 	return true

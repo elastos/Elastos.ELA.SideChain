@@ -10,6 +10,7 @@ type PayloadInvoke struct {
 	CodeHash    common.Uint168
 	Code        []byte
 	ProgramHash common.Uint168
+	Gas         common.Fixed64
 }
 
 func (ic *PayloadInvoke) Data(version byte) []byte{
@@ -26,6 +27,10 @@ func (ic *PayloadInvoke) Serialize(w io.Writer, version byte) error {
 		return err
 	}
 	err = ic.ProgramHash.Serialize(w)
+	if err != nil {
+		return err
+	}
+	err = ic.Gas.Serialize(w)
 	if err != nil {
 		return err
 	}
@@ -51,6 +56,13 @@ func (ic *PayloadInvoke) Deserialize(r io.Reader, version byte) error {
 		return err
 	}
 	ic.ProgramHash = programHash
+
+	gas := common.Fixed64(0)
+	err = gas.Deserialize(r)
+	if err != nil {
+		return err
+	}
+	ic.Gas = gas
 
 	return nil
 }

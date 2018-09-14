@@ -38,6 +38,7 @@ const (
 	InternalError           ErrCode = 45002
 
 	SmartCodeError          ErrCode = 47001
+	OutOfGas                ErrCode = 47002
 )
 
 var ErrMap = map[ErrCode]string{
@@ -71,6 +72,7 @@ var ErrMap = map[ErrCode]string{
 	ErrInvalidReferedTxn:    "INTERNAL ERROR, ErrInvalidReferedTxn",
 	ErrIneffectiveCoinbase:  "INTERNAL ERROR, ErrIneffectiveCoinbase",
 	SmartCodeError:          "INTERNAL ERROR,SmartCode Exec error",
+	OutOfGas:                "INTERNAL ERROR, gas is not enough",
 }
 
 func (code ErrCode) Message() string {

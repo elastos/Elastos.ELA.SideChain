@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
+	"fmt"
 )
 
 type ParamsBuilder struct {
@@ -69,6 +70,36 @@ func (p *ParamsBuilder) EmitPushByteArray(data []byte) {
 func (p *ParamsBuilder) EmitPushCall(codeHash []byte) {
 	p.Emit(TAILCALL)
 	p.buffer.Write(codeHash)
+}
+
+func (p *ParamsBuilder) EmitSysCall(api string, args...interface{}) {
+	for i := len(args) - 1; i >= 0; i-- {
+		switch v := args[i].(type) {
+		case int:
+			p.EmitPushInteger(int64(v))
+		case int32:
+			p.EmitPushInteger(int64(v))
+		case int64:
+			p.EmitPushInteger(int64(v))
+		case int16:
+			p.EmitPushInteger(int64(v))
+		case int8:
+			p.EmitPushInteger(int64(v))
+		case uint8:
+			p.EmitPushInteger(int64(v))
+		case []byte:
+			p.EmitPushByteArray(v)
+		case string:
+			p.EmitPushByteArray([]byte(v))
+		case *common.Uint168:
+			p.EmitPushByteArray(v.Bytes())
+		default:
+			fmt.Println(i, v)
+			continue
+		}
+	}
+	p.Emit(SYSCALL)
+	p.EmitPushByteArray([]byte(api))
 }
 
 func (p *ParamsBuilder) Bytes() []byte {
