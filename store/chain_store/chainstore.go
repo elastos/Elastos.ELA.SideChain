@@ -413,7 +413,7 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 		Code:         payloadDeploy.Code.Code,
 		Time:         big.NewInt(int64(b.Timestamp)),
 		BlockNumber:  big.NewInt(int64(b.Height)),
-		Gas:          Fixed64(0), //todo confirm this gas is set to PayloadDeploy
+		Gas:          payloadDeploy.Gas,
 		Trigger:      vm.Application,
 	})
 	if err != nil {
