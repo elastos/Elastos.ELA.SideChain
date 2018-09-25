@@ -52,6 +52,7 @@ type HttpServersBase struct {
 	GetBlock                         func(hash Uint256, format uint32) (interface{}, ErrCode)
 	GetBlockByHash                   func(param Params) map[string]interface{}
 	SendTransactionInfo              func(param Params) map[string]interface{}
+	GetTransactionInfoByHash         func(param Params) map[string]interface{}
 	SendRawTransaction               func(param Params) map[string]interface{}
 	GetBlockHeight                   func(param Params) map[string]interface{}
 	GetBestBlockHash                 func(param Params) map[string]interface{}
@@ -121,6 +122,7 @@ func (s *HttpServersBase) Init() {
 	s.GetPayloadInfo = s.GetPayloadInfoImpl
 	s.GetTransactionInfoFromBytes = s.GetTransactionInfoFromBytesImpl
 	s.VerifyAndSendTx = s.VerifyAndSendTxImpl
+	s.GetTransactionInfoByHash = s.GetTransactionInfoByHashImpl
 }
 
 func ToReversedString(hash Uint256) string {
@@ -250,14 +252,6 @@ func (s *HttpServersBase) GetTransactionImpl(txInfo *TransactionInfo) (*Transact
 
 	var txOutputs []*Output
 	for _, output := range txInfo.Outputs {
-		assetIdBytes, err := FromReversedString(output.AssetID)
-		if err != nil {
-			return nil, err
-		}
-		assetId, err := Uint256FromBytes(assetIdBytes)
-		if err != nil {
-			return nil, err
-		}
 		value, err := StringToFixed64(output.Value)
 		if err != nil {
 			return nil, err
@@ -267,7 +261,7 @@ func (s *HttpServersBase) GetTransactionImpl(txInfo *TransactionInfo) (*Transact
 			return nil, err
 		}
 		output := &Output{
-			AssetID:     *assetId,
+			AssetID:     GetSystemAssetId(),
 			Value:       *value,
 			OutputLock:  output.OutputLock,
 			ProgramHash: *programHash,
@@ -671,21 +665,15 @@ func (s *HttpServersBase) GetBlockByHashImpl(param Params) map[string]interface{
 }
 
 func (s *HttpServersBase) SendTransactionInfoImpl(param Params) map[string]interface{} {
-
-	infoStr, ok := param.String("Info")
+	txInfoI, ok := param["info"]
 	if !ok {
-		return ResponsePack(InvalidParams, "Info not found")
+		return ResponsePack(InvalidParams, "info not found")
 	}
 
-	infoBytes, err := HexStringToBytes(infoStr)
+	txInfo := new(TransactionInfo)
+	err := Unmarshal(txInfoI, txInfo)
 	if err != nil {
-		return ResponsePack(InvalidParams, "")
-	}
-
-	txInfo, err := s.GetTransactionInfoFromBytes(infoBytes)
-
-	if err != nil {
-		return ResponsePack(InvalidParams, "")
+		return ResponsePack(InvalidParams, "info type error")
 	}
 
 	txn, err := s.GetTransaction(txInfo)
@@ -1001,24 +989,13 @@ func (s *HttpServersBase) GetTransactionByHashImpl(param Params) map[string]inte
 }
 
 func (s *HttpServersBase) GetExistDepositTransactionsImpl(param Params) map[string]interface{} {
-	txsStr, ok := param.String("txs")
+	txs, ok := param.ArrayString("txs")
 	if !ok {
 		return ResponsePack(InvalidParams, "txs not found")
 	}
 
-	txsBytes, err := HexStringToBytes(txsStr)
-	if err != nil {
-		return ResponsePack(InvalidParams, "")
-	}
-
-	var txHashes []string
-	err = json.Unmarshal(txsBytes, &txHashes)
-	if err != nil {
-		return ResponsePack(InvalidParams, "")
-	}
-
 	var resultTxHashes []string
-	for _, txHash := range txHashes {
+	for _, txHash := range txs {
 		txHashBytes, err := HexStringToBytes(txHash)
 		if err != nil {
 			return ResponsePack(InvalidParams, "")
@@ -1091,6 +1068,36 @@ func (s *HttpServersBase) GetDestroyedTransactionsByHeightImpl(param Params) map
 	}))
 }
 
+func (s *HttpServersBase) GetTransactionInfoByHashImpl(param Params) map[string]interface{} {
+	str, ok := param.String("txid")
+	if !ok {
+		return ResponsePack(InvalidParams, "txid not found")
+	}
+	hex, err := FromReversedString(str)
+	if err != nil {
+		return ResponsePack(InvalidParams, "txid reverse failed")
+	}
+	var hash Uint256
+	err = hash.Deserialize(bytes.NewReader(hex))
+	if err != nil {
+		return ResponsePack(InvalidTransaction, "txid deserialize failed")
+	}
+	tx, height, err := chain.DefaultLedger.Store.GetTransaction(hash)
+	if err != nil {
+		return ResponsePack(UnknownTransaction, "get tx by txid failed")
+	}
+	bHash, err := chain.DefaultLedger.Store.GetBlockHash(height)
+	if err != nil {
+		return ResponsePack(UnknownTransaction, "get block by height failed")
+	}
+	header, err := chain.DefaultLedger.Store.GetHeader(bHash)
+	if err != nil {
+		return ResponsePack(UnknownTransaction, "get header by block hash failed")
+	}
+
+	return ResponsePack(Success, s.GetTransactionInfo(header, tx))
+}
+
 func (s *HttpServersBase) GetPayloadImpl(pInfo PayloadInfo) (Payload, error) {
 
 	switch object := pInfo.(type) {
@@ -1124,9 +1131,18 @@ func (s *HttpServersBase) GetPayloadImpl(pInfo PayloadInfo) (Payload, error) {
 		return obj, nil
 	case *TransferCrossChainAssetInfo:
 		obj := new(PayloadTransferCrossChainAsset)
-		obj.CrossChainAddresses = object.CrossChainAddresses
-		obj.OutputIndexes = object.OutputIndexes
-		obj.CrossChainAmounts = object.CrossChainAmounts
+		obj.CrossChainAddresses = make([]string, 0)
+		obj.OutputIndexes = make([]uint64, 0)
+		obj.CrossChainAmounts = make([]Fixed64, 0)
+		for _, assetInfo := range object.CrossChainAssets {
+			obj.CrossChainAddresses = append(obj.CrossChainAddresses, assetInfo.CrossChainAddress)
+			obj.OutputIndexes = append(obj.OutputIndexes, assetInfo.OutputIndex)
+			amount, err := StringToFixed64(assetInfo.CrossChainAmount)
+			if err != nil {
+				return nil, err
+			}
+			obj.CrossChainAmounts = append(obj.CrossChainAmounts, *amount)
+		}
 		return obj, nil
 	}
 
@@ -1147,9 +1163,16 @@ func (s *HttpServersBase) GetPayloadInfoImpl(p Payload) PayloadInfo {
 		return obj
 	case *PayloadTransferCrossChainAsset:
 		obj := new(TransferCrossChainAssetInfo)
-		obj.CrossChainAddresses = object.CrossChainAddresses
-		obj.OutputIndexes = object.OutputIndexes
-		obj.CrossChainAmounts = object.CrossChainAmounts
+		obj.CrossChainAssets = make([]CrossChainAssetInfo, 0)
+		for i := 0; i < len(object.CrossChainAddresses); i++ {
+			assetInfo := CrossChainAssetInfo{
+				CrossChainAddress: object.CrossChainAddresses[i],
+				OutputIndex:       object.OutputIndexes[i],
+				CrossChainAmount:  object.CrossChainAmounts[i].String(),
+			}
+			obj.CrossChainAssets = append(obj.CrossChainAssets, assetInfo)
+
+		}
 		return obj
 	case *PayloadTransferAsset:
 	case *PayloadRecord:
