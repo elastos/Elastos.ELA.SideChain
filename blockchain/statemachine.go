@@ -164,7 +164,8 @@ func (s *StateMachine) GetContract(engine *vm.ExecutionEngine) bool {
 		fmt.Println(err)
 		return false
 	}
-	item, err := s.CloneCache.TryGet(store.ST_Contract, storage.KeyToStr(hash))
+	keyStr := string(hash.Bytes()[0 : len(hash) -  1])
+	item, err := s.CloneCache.TryGet(store.ST_Contract, keyStr)
 	if err != nil {
 		fmt.Println(err)
 		return false
@@ -198,19 +199,18 @@ func (s *StateMachine) ContractDestory(engine *vm.ExecutionEngine) bool {
 	if data == nil {
 		return false
 	}
-
-	hash, err := common.Uint168FromBytes(data)
+	hash, err := crypto.ToProgramHash(data)
 	if err != nil {
 		fmt.Println(err)
 		return false
 	}
-	keyStr := storage.KeyToStr(hash)
+	keyStr := string(hash.Bytes()[0 : len(hash) -  1])
 	item, err := s.CloneCache.TryGet(store.ST_Contract, keyStr)
 	if err != nil || item == nil {
 		fmt.Println(err)
 		return false
 	}
-	s.CloneCache.GetInnerCache().GetWriteSet().Delete(keyStr)
+	s.CloneCache.TryDelete(store.ST_Contract, *hash)
 	return true
 }
 

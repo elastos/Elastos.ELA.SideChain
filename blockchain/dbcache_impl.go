@@ -50,6 +50,13 @@ func (cache *DBCache) TryGetInternal(prefix DataEntryPrefix, key string) (states
 	return states.GetStateValue(prefix, value)
 }
 
+func (cache *DBCache) TryDelete(prefix DataEntryPrefix, key string) bool {
+	k := make([]byte, 0)
+	k = append([]byte{byte(prefix)}, []byte(key)...)
+	err := cache.db.Delete(k)
+	return err == nil
+}
+
 func (cache *DBCache) GetOrAdd(prefix DataEntryPrefix, key string, value states.IStateValueInterface) (states.IStateValueInterface, error) {
 	if v, ok := cache.RWSet.WriteSet[key]; ok {
 		if v.IsDeleted {

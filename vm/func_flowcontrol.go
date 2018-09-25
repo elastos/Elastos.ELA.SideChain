@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/elastos/Elastos.ELA.SideChain/vm/errors"
+	"github.com/elastos/Elastos.ELA.Utility/common"
 )
 
 func opNop(e *ExecutionEngine) (VMState, error) {
@@ -51,7 +52,7 @@ func opAppCall(e *ExecutionEngine) (VMState, error) {
 	if e.table == nil {
 		return FAULT, nil
 	}
-	script_hash := e.context.OpReader.ReadBytes(21)
+	script_hash := e.context.OpReader.ReadBytes(20)
 	script := e.table.GetScript(script_hash)
 	if script == nil {
 		return FAULT, nil
@@ -98,7 +99,6 @@ func opCallI(e *ExecutionEngine) (VMState, error) {
 }
 
 func opCallE(e *ExecutionEngine) (VMState, error) {
-	//todo this function should test
 	if e.table == nil {
 		return FAULT, nil
 	}
@@ -117,7 +117,8 @@ func opCallE(e *ExecutionEngine) (VMState, error) {
 	if (e.opCode == CALL_ED || e.opCode == CALL_EDT) {
 		script_hash = PopByteArray(e)
 	} else {
-		script_hash = e.context.OpReader.ReadBytes(21)
+		script_hash = e.context.OpReader.ReadBytes(20)
+		script_hash = common.BytesReverse(script_hash)
 	}
 
 	script := e.table.GetScript(script_hash)

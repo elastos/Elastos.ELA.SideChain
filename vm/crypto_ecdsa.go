@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
+	"github.com/elastos/Elastos.ELA.Utility/common"
 )
 
 type CryptoECDsa struct {
@@ -18,7 +19,8 @@ func (c *CryptoECDsa) Hash168(data []byte) []byte {
 }
 
 func (c *CryptoECDsa) Hash256(data []byte) []byte {
-	return []byte{}
+	hash := common.Uint256(common.Sha256D(data))
+	return hash.Bytes()
 }
 
 func (c *CryptoECDsa) VerifySignature(data []byte, signature []byte, pubkey []byte) error {

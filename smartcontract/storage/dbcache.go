@@ -12,6 +12,7 @@ import (
 type DBCache interface {
 	GetOrAdd(prefix DataEntryPrefix, key string, value states.IStateValueInterface) (states.IStateValueInterface, error)
 	TryGet(prefix DataEntryPrefix, key string) (states.IStateValueInterface, error)
+	TryDelete(prefix DataEntryPrefix, key string) bool
 	GetWriteSet() *RWSet
 	//GetState(codeHash common.Uint168, loc common.Hash) (common.Hash, error)
 	//SetState(codeHash common.Uint160, loc, value common.Hash)
@@ -56,3 +57,13 @@ func (cloneCache *CloneCache) TryGet(prefix DataEntryPrefix, key string) (states
 		return cloneCache.dbCache.TryGet(prefix, key)
 	}
 }
+
+func (cloneCache *CloneCache) TryDelete(prefix DataEntryPrefix, hash common.Uint168) bool {
+
+	cloneCache.innerCache.GetWriteSet().Delete(string(hash.Bytes()))
+
+	keyStr := string(hash.Bytes()[0 : len(hash) -  1])
+	result := cloneCache.dbCache.TryDelete(prefix, keyStr)
+	return result
+}
+
