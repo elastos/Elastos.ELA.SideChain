@@ -15,6 +15,19 @@ import (
 )
 
 const (
+	PersistTrimmedBlock  = "persisttrimmedblock"
+	RollbackTrimmedBlock = "rollbacktrimmedblock"
+	PersistBlockHash     = "persistblockhash"
+	RollbackBlockHash    = "rollbackblockhash"
+	PersistCurrentBlock  = "persistcurrentblock"
+	RollbackCurrentBlock = "rollbackcurrentblock"
+	PersistUnspendUTXOs  = "persistunspendutxos"
+	RollbackUnspendUTXOs = "rollbackunspendutxos"
+	PersistTransactions  = "persisttransactions"
+	RollbackTransactions = "rollbacktransactions"
+	PersistUnspend       = "persistunspend"
+	RollbackUnspend      = "rollbackunspend"
+
 	ValueNone   = 0
 	ValueExist  = 1
 	TaskChanCap = 4
@@ -32,6 +45,8 @@ type persistBlockTask struct {
 	reply chan bool
 }
 
+type PersistFunctionType string
+
 type ChainStore struct {
 	IStore
 
@@ -46,21 +61,8 @@ type ChainStore struct {
 	currentBlockHeight uint32
 	storedHeaderCount  uint32
 
-	PersistTrimmedBlock  func(b *core.Block) error
-	RollbackTrimmedBlock func(b *core.Block) error
-	PersistBlockHash     func(b *core.Block) error
-	RollbackBlockHash    func(b *core.Block) error
-	PersistCurrentBlock  func(b *core.Block) error
-	RollbackCurrentBlock func(b *core.Block) error
-	PersistUnspendUTXOs  func(b *core.Block) error
-	RollbackUnspendUTXOs func(b *core.Block) error
-	PersistTransactions  func(b *core.Block) error
-	RollbackTransactions func(b *core.Block) error
-	RollbackTransaction  func(txn *core.Transaction) error
-	RollbackAsset        func(assetId Uint256) error
-	RollbackMainchainTx  func(mainchainTxHash Uint256) error
-	PersistUnspend       func(b *core.Block) error
-	RollbackUnspend      func(b *core.Block) error
+	PersistFunctions  map[PersistFunctionType]func(b *core.Block) error
+	RollbackFunctions map[PersistFunctionType]func(b *core.Block) error
 }
 
 func NewChainStore() (*ChainStore, error) {
@@ -88,21 +90,19 @@ func NewChainStore() (*ChainStore, error) {
 }
 
 func (c *ChainStore) Init() {
-	c.PersistTrimmedBlock = c.PersistTrimmedBlockImpl
-	c.RollbackTrimmedBlock = c.RollbackTrimmedBlockImpl
-	c.PersistBlockHash = c.PersistBlockHashImpl
-	c.RollbackBlockHash = c.RollbackBlockHashImpl
-	c.PersistCurrentBlock = c.PersistCurrentBlockImpl
-	c.RollbackCurrentBlock = c.RollbackCurrentBlockImpl
-	c.PersistUnspendUTXOs = c.PersistUnspendUTXOsImpl
-	c.RollbackUnspendUTXOs = c.RollbackUnspendUTXOsImpl
-	c.PersistTransactions = c.PersistTransactionsImpl
-	c.RollbackTransactions = c.RollbackTransactionsImpl
-	c.RollbackTransaction = c.RollbackTransactionImpl
-	c.RollbackAsset = c.RollbackAssetImpl
-	c.RollbackMainchainTx = c.RollbackMainchainTxImpl
-	c.PersistUnspend = c.PersistUnspendImpl
-	c.RollbackUnspend = c.RollbackUnspendImpl
+	c.PersistFunctions[PersistTrimmedBlock] = c.PersistTrimmedBlock
+	c.PersistFunctions[PersistBlockHash] = c.PersistBlockHash
+	c.PersistFunctions[PersistCurrentBlock] = c.PersistCurrentBlock
+	c.PersistFunctions[PersistUnspendUTXOs] = c.PersistUnspendUTXOs
+	c.PersistFunctions[PersistTransactions] = c.PersistTransactions
+	c.PersistFunctions[PersistUnspend] = c.PersistUnspend
+
+	c.RollbackFunctions[RollbackTrimmedBlock] = c.RollbackTrimmedBlock
+	c.RollbackFunctions[RollbackBlockHash] = c.RollbackBlockHash
+	c.RollbackFunctions[RollbackCurrentBlock] = c.RollbackCurrentBlock
+	c.RollbackFunctions[RollbackUnspendUTXOs] = c.RollbackUnspendUTXOs
+	c.RollbackFunctions[RollbackTransactions] = c.RollbackTransactions
+	c.RollbackFunctions[RollbackUnspend] = c.RollbackUnspend
 }
 
 func (c *ChainStore) Close() {
@@ -490,12 +490,10 @@ func (c *ChainStore) GetBlock(hash Uint256) (*core.Block, error) {
 
 func (c *ChainStore) rollback(b *core.Block) error {
 	c.NewBatch()
-	c.RollbackTrimmedBlock(b)
-	c.RollbackBlockHash(b)
-	c.RollbackTransactions(b)
-	c.RollbackUnspendUTXOs(b)
-	c.RollbackUnspend(b)
-	c.RollbackCurrentBlock(b)
+
+	for _, rollbackFunc := range c.RollbackFunctions {
+		rollbackFunc(b)
+	}
 	c.BatchCommit()
 
 	c.mu.Lock()
@@ -509,23 +507,10 @@ func (c *ChainStore) rollback(b *core.Block) error {
 
 func (c *ChainStore) persist(b *core.Block) error {
 	c.NewBatch()
-	if err := c.PersistTrimmedBlock(b); err != nil {
-		return err
-	}
-	if err := c.PersistBlockHash(b); err != nil {
-		return err
-	}
-	if err := c.PersistTransactions(b); err != nil {
-		return err
-	}
-	if err := c.PersistUnspendUTXOs(b); err != nil {
-		return err
-	}
-	if err := c.PersistUnspend(b); err != nil {
-		return err
-	}
-	if err := c.PersistCurrentBlock(b); err != nil {
-		return err
+	for _, persistFunc := range c.PersistFunctions {
+		if err := persistFunc(b); err != nil {
+			return err
+		}
 	}
 	return c.BatchCommit()
 }
