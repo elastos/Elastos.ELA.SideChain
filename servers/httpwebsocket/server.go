@@ -86,14 +86,14 @@ func (server *WebSocketServer) Start() {
 
 func (server *WebSocketServer) initializeMethods() {
 	server.ActionMap = map[string]Handler{
-		"getconnectioncount": HttpServers.GetConnectionCount,
-		"getblockbyheight":   HttpServers.GetBlockByHeight,
-		"getblockbyhash":     HttpServers.GetBlockByHash,
-		"getblockheight":     HttpServers.GetBlockHeight,
-		"gettransaction":     HttpServers.GetTransactionByHash,
-		"getasset":           HttpServers.GetAssetByHash,
-		"getunspendoutput":   HttpServers.GetUnspendOutput,
-		"sendrawtransaction": HttpServers.SendRawTransaction,
+		"getconnectioncount": HttpServers.Functions[GetConnectionCount],
+		"getblockbyheight":   HttpServers.Functions[GetBlockByHeight],
+		"getblockbyhash":     HttpServers.Functions[GetBlockByHash],
+		"getblockheight":     HttpServers.Functions[GetBlockHeight],
+		"gettransaction":     HttpServers.Functions[GetTransactionByHash],
+		"getasset":           HttpServers.Functions[GetAssetByHash],
+		"getunspendoutput":   HttpServers.Functions[GetUnspendOutput],
+		"sendrawtransaction": HttpServers.Functions[SendRawTransaction],
 		"heartbeat":          server.hearBeat,
 		"getsessioncount":    server.getSessionCount,
 	}

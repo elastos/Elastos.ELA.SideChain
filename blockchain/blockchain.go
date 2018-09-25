@@ -36,33 +36,33 @@ var (
 )
 
 type Config struct {
-	ChainStore       IChainStore
-	PowLimit         *big.Int
-	MaxOrphanBlocks  int
-	MinMemoryNodes   uint32
+	ChainStore      IChainStore
+	PowLimit        *big.Int
+	MaxOrphanBlocks int
+	MinMemoryNodes  uint32
 }
 
 type Blockchain struct {
-	db               IChainStore
-	maxOrphanBlocks  int
-	minMemoryNodes   uint32
-	powLimit         *big.Int
-	GenesisHash      Uint256
-	BestChain        *BlockNode
-	Root             *BlockNode
-	Index            map[Uint256]*BlockNode
-	IndexLock        sync.RWMutex
-	DepNodes         map[Uint256][]*BlockNode
-	Orphans          map[Uint256]*OrphanBlock
-	PrevOrphans      map[Uint256][]*OrphanBlock
-	OldestOrphan     *OrphanBlock
-	BlockCache       map[Uint256]*core.Block
-	TimeSource       MedianTimeSource
-	MedianTimePast   time.Time
-	OrphanLock       sync.RWMutex
-	BCEvents         *events.Event
-	mutex            sync.RWMutex
-	AssetID          Uint256
+	db              IChainStore
+	maxOrphanBlocks int
+	minMemoryNodes  uint32
+	powLimit        *big.Int
+	GenesisHash     Uint256
+	BestChain       *BlockNode
+	Root            *BlockNode
+	Index           map[Uint256]*BlockNode
+	IndexLock       sync.RWMutex
+	DepNodes        map[Uint256][]*BlockNode
+	Orphans         map[Uint256]*OrphanBlock
+	PrevOrphans     map[Uint256][]*OrphanBlock
+	OldestOrphan    *OrphanBlock
+	BlockCache      map[Uint256]*core.Block
+	TimeSource      MedianTimeSource
+	MedianTimePast  time.Time
+	OrphanLock      sync.RWMutex
+	BCEvents        *events.Event
+	mutex           sync.RWMutex
+	AssetID         Uint256
 }
 
 func New(cfg *Config) (*Blockchain, error) {
@@ -78,20 +78,20 @@ func New(cfg *Config) (*Blockchain, error) {
 	}
 
 	chain := Blockchain{
-		db:               cfg.ChainStore,
-		maxOrphanBlocks:  defaultMaxOrphanBlocks,
-		minMemoryNodes:   defaultMinMemoryNodes,
-		powLimit:         cfg.PowLimit,
-		GenesisHash:      genesisBlock.Hash(),
-		Root:             nil,
-		BestChain:        nil,
-		Index:            make(map[Uint256]*BlockNode),
-		DepNodes:         make(map[Uint256][]*BlockNode),
-		OldestOrphan:     nil,
-		Orphans:          make(map[Uint256]*OrphanBlock),
-		PrevOrphans:      make(map[Uint256][]*OrphanBlock),
-		BlockCache:       make(map[Uint256]*core.Block),
-		TimeSource:       NewMedianTime(),
+		db:              cfg.ChainStore,
+		maxOrphanBlocks: defaultMaxOrphanBlocks,
+		minMemoryNodes:  defaultMinMemoryNodes,
+		powLimit:        cfg.PowLimit,
+		GenesisHash:     genesisBlock.Hash(),
+		Root:            nil,
+		BestChain:       nil,
+		Index:           make(map[Uint256]*BlockNode),
+		DepNodes:        make(map[Uint256][]*BlockNode),
+		OldestOrphan:    nil,
+		Orphans:         make(map[Uint256]*OrphanBlock),
+		PrevOrphans:     make(map[Uint256][]*OrphanBlock),
+		BlockCache:      make(map[Uint256]*core.Block),
+		TimeSource:      NewMedianTime(),
 
 		BCEvents: events.NewEvent(),
 		AssetID:  assetId,
@@ -971,7 +971,7 @@ func (b *Blockchain) maybeAcceptBlock(block *core.Block) (bool, error) {
 
 	// The block must pass all of the validation rules which depend on the
 	// position of the block within the block chain.
-	err = BlockValidator.PowCheckBlockContext(block, prevNode)
+	err = BlockValidator.PowCheckBlockContext(&BlockValidateParameter{Block: block, PrevNode: prevNode})
 	if err != nil {
 		log.Error("PowCheckBlockContext error!", err)
 		return false, err
@@ -1135,7 +1135,7 @@ func (b *Blockchain) ProcessBlock(block *core.Block, timeSource MedianTimeSource
 
 	// Perform preliminary sanity checks on the block and its transactions.
 	//err = PowCheckBlockSanity(block, PowLimit, b.TimeSource)
-	err = BlockValidator.PowCheckBlockSanity(block, b.powLimit, b.TimeSource)
+	err = BlockValidator.PowCheckBlockSanity(&BlockValidateParameter{Block: block, PowLimit: b.powLimit, TimeSource: b.TimeSource})
 
 	if err != nil {
 		log.Error("PowCheckBlockSanity error!", err)
