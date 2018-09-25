@@ -73,7 +73,7 @@ func (ras *RandomAccessStack) Pop() interface{} {
 
 func (ras *RandomAccessStack) Swap(i, j int) {
 	//ras.Element[i], ras.Element[j] = ras.Element[j], ras.Element[i]
-	//todo if not use blow , result is not correct
+	// if not use blow , result is not correct
 	l := len(ras.Element)
 	ras.Element[l - i - 1], ras.Element[l - j - 1] = ras.Element[l - j - 1], ras.Element[l - i - 1]
 }

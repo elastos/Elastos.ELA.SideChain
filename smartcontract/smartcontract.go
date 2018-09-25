@@ -120,7 +120,7 @@ func (sc *SmartContract) InvokeResult() (interface{}, error) {
 			case *types.Integer:
 				return data.GetBigInteger(), nil
 			case *types.ByteArray:
-				return BytesToInt(data.GetByteArray()), nil
+				return common.BytesToHexString(data.GetByteArray()), nil
 			case *types.GeneralInterface:
 				interop := data.GetInterface()
 				switch interop.(type) {

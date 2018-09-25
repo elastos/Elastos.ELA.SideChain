@@ -433,7 +433,11 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 	}
 
 	codeHash := payloadDeploy.Code.CodeHash()
-	dbCache.GetOrAdd(ST_Contract, string(codeHash.Bytes()), &states.ContractState{
+	//because neo compiler use [AppCall(hash)] ，will change hash168 to hash160,so we deploy contract use hash160
+	hashBytes := make([]byte, len(codeHash) - 1)
+	data := codeHash.Bytes();
+	copy(hashBytes, data[0 : len(codeHash) - 1])
+	dbCache.GetOrAdd(ST_Contract, string(hashBytes), &states.ContractState{
 		Code:        payloadDeploy.Code,
 		Name:        payloadDeploy.Name,
 		Version:     payloadDeploy.CodeVersion,
@@ -942,7 +946,12 @@ func (c *ChainStore) GetAssets() map[Uint256]*core.Asset {
 
 func (c *ChainStore) GetContract(codeHash Uint168) ([]byte, error) {
 	prefix := []byte{byte(ST_Contract)}
-	bData, err_get := c.Get(append(prefix, codeHash.Bytes()...))
+
+	hashBytes := make([]byte, len(codeHash) - 1)
+	data := codeHash.Bytes();
+	copy(hashBytes, data[0 : len(codeHash) - 1])
+
+	bData, err_get := c.Get(append(prefix, hashBytes...))
 	if err_get != nil {
 		return nil, err_get
 	}

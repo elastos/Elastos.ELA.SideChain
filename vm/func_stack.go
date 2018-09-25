@@ -2,6 +2,11 @@ package vm
 
 import "math/big"
 
+func opDupFromAltStack(e *ExecutionEngine) (VMState, error) {
+	e.evaluationStack.Push(e.altStack.Peek(0))
+	return NONE, nil
+}
+
 func opToAltStack(e *ExecutionEngine) (VMState, error) {
 	if e.evaluationStack.Count() < 1 {
 		return FAULT, nil

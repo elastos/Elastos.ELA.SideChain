@@ -13,6 +13,7 @@ const (
 	PublicKey
 	String
 	Object
+	Hash168
 	Array = 0x10
 	Void  = 0xff
 )
@@ -27,6 +28,7 @@ var ParameterTypeMap = map[string]ContractParameterType{
 	"PublicKey": PublicKey,
 	"String":    String,
 	"Object":    Object,
+	"Hash168":   Hash168,
 	"Array":     Array,
 	"Void":      Void,
 }

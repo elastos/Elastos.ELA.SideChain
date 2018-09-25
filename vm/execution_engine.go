@@ -29,19 +29,18 @@ func NewExecutionEngine(container interfaces.IDataContainer, crypto interfaces.I
 	var engine ExecutionEngine
 
 	engine.crypto = crypto
-	engine.table = table
 
 	engine.dataContainer = container
-	engine.invocationStack = utils.NewRandAccessStack()
-	engine.opCount = 0
 
+	engine.table = table
+	engine.invocationStack = utils.NewRandAccessStack()
 	engine.evaluationStack = utils.NewRandAccessStack()
 	engine.altStack = utils.NewRandAccessStack()
-	engine.state = BREAK
 
+	engine.state = BREAK
 	engine.context = nil
 	engine.opCode = 0
-
+	engine.opCount = 0
 	engine.maxSteps = maxSteps
 
 	engine.service = NewGeneralService()
@@ -176,11 +175,8 @@ func (e *ExecutionEngine) StepInto() error {
 	if e.state&HALT == HALT || e.state&FAULT == FAULT {
 		return nil
 	}
-
 	context := AssertExecutionContext(e.invocationStack.Peek(0))
-
 	var opCode OpCode
-
 	if context.GetInstructionPointer() >= len(context.Script) {
 		opCode = RET
 	} else {
