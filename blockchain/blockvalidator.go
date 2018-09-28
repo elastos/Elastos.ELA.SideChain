@@ -78,7 +78,7 @@ func (v *BlockValidateBase) PowCheckHeaderImpl(block *Block, powLimit *big.Int, 
 
 	// A block's main chain block header must contain in spv module
 	//mainChainBlockHash := header.SideAuxPow.MainBlockHeader.Hash()
-	//if err := spv.VerifyElaHeader(&mainChainBlockHash); err != nil {
+	//if err := VerifyElaHeader(&mainChainBlockHash); err != nil {
 	//	return err
 	//}
 

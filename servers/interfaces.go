@@ -71,7 +71,7 @@ type HttpServersBase struct {
 	GetBlockTransactionsDetail       func(block *Block, filter func(*Transaction) bool) interface{}
 	GetDestroyedTransactionsByHeight func(param Params) map[string]interface{}
 	GetPayload                       func(pInfo PayloadInfo) (Payload, error)
-	GetPayloadInfo                   func(p Payload) PayloadInfo
+	GetPayloadInfo                   func(p Payload, pVersion byte) PayloadInfo
 	GetTransactionInfoFromBytes      func(txInfoBytes []byte) (*TransactionInfo, error)
 	VerifyAndSendTx                  func(txn *Transaction) ErrCode
 }
@@ -199,7 +199,7 @@ func (s *HttpServersBase) GetTransactionInfoImpl(header *Header, tx *Transaction
 		BlockTime:      blockTime,
 		TxType:         tx.TxType,
 		PayloadVersion: tx.PayloadVersion,
-		Payload:        s.GetPayloadInfo(tx.Payload),
+		Payload:        s.GetPayloadInfo(tx.Payload, tx.PayloadVersion),
 		Attributes:     attributes,
 		Programs:       programs,
 	}
@@ -1116,7 +1116,7 @@ func (s *HttpServersBase) GetPayloadImpl(pInfo PayloadInfo) (Payload, error) {
 		controller, err := Uint168FromBytes(BytesReverse(bytes))
 		obj.Controller = *controller
 		return obj, nil
-	case *RechargeToSideChainInfo:
+	case *RechargeToSideChainInfoV0:
 		obj := new(PayloadRechargeToSideChain)
 		proofBytes, err := HexStringToBytes(object.Proof)
 		if err != nil {
@@ -1128,6 +1128,18 @@ func (s *HttpServersBase) GetPayloadImpl(pInfo PayloadInfo) (Payload, error) {
 			return nil, err
 		}
 		obj.MainChainTransaction = transactionBytes
+		return obj, nil
+	case *RechargeToSideChainInfoV1:
+		obj := new(PayloadRechargeToSideChain)
+		hashBytes, err := HexStringToBytes(object.MainChainTransactionHash)
+		if err != nil {
+			return nil, err
+		}
+		hash, err := Uint256FromBytes(BytesReverse(hashBytes))
+		if err != nil {
+			return nil, err
+		}
+		obj.MainChainTransactionHash = *hash
 		return obj, nil
 	case *TransferCrossChainAssetInfo:
 		obj := new(PayloadTransferCrossChainAsset)
@@ -1149,7 +1161,7 @@ func (s *HttpServersBase) GetPayloadImpl(pInfo PayloadInfo) (Payload, error) {
 	return nil, errors.New("Invalid payload type.")
 }
 
-func (s *HttpServersBase) GetPayloadInfoImpl(p Payload) PayloadInfo {
+func (s *HttpServersBase) GetPayloadInfoImpl(p Payload, pVersion byte) PayloadInfo {
 	switch object := p.(type) {
 	case *PayloadCoinBase:
 		obj := new(CoinbaseInfo)
@@ -1171,16 +1183,21 @@ func (s *HttpServersBase) GetPayloadInfoImpl(p Payload) PayloadInfo {
 				CrossChainAmount:  object.CrossChainAmounts[i].String(),
 			}
 			obj.CrossChainAssets = append(obj.CrossChainAssets, assetInfo)
-
 		}
 		return obj
 	case *PayloadTransferAsset:
 	case *PayloadRecord:
 	case *PayloadRechargeToSideChain:
-		obj := new(RechargeToSideChainInfo)
-		obj.MainChainTransaction = BytesToHexString(object.MainChainTransaction)
-		obj.Proof = BytesToHexString(object.MerkleProof)
-		return obj
+		if pVersion == RechargeToSideChainPayloadVersion0 {
+			obj := new(RechargeToSideChainInfoV0)
+			obj.MainChainTransaction = BytesToHexString(object.MainChainTransaction)
+			obj.Proof = BytesToHexString(object.MerkleProof)
+			return obj
+		} else if pVersion == RechargeToSideChainPayloadVersion1 {
+			obj := new(RechargeToSideChainInfoV1)
+			obj.MainChainTransactionHash = ToReversedString(object.MainChainTransactionHash)
+			return obj
+		}
 	}
 	return nil
 }
@@ -1213,7 +1230,7 @@ func (s *HttpServersBase) GetTransactionInfoFromBytesImpl(txInfoBytes []byte) (*
 	case SideChainPow:
 		assetInfo = &SideChainPowInfo{}
 	case RechargeToSideChain:
-		assetInfo = &RechargeToSideChainInfo{}
+		assetInfo = &RechargeToSideChainInfoV0{}
 	case TransferCrossChainAsset:
 		assetInfo = &TransferCrossChainAssetInfo{}
 	default:

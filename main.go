@@ -87,7 +87,7 @@ func main() {
 	}
 
 	log.Info("2. SPV module init")
-	if err := spv.SpvInit(); err != nil {
+	if err := spv.SpvInit(blockchain.NewSpvListener()); err != nil {
 		log.Fatal(err, "SPV module initialize failed")
 		goto ERROR
 	}
