@@ -5,15 +5,20 @@ import (
 	"errors"
 	"io"
 
-	ela "github.com/elastos/Elastos.ELA/core"
 	"github.com/elastos/Elastos.ELA.Utility/common"
+	ela "github.com/elastos/Elastos.ELA/core"
 )
 
-const RechargeToSideChainPayloadVersion byte = 0x00
+const (
+	RechargeToSideChainPayloadVersion0 byte = 0x00
+	RechargeToSideChainPayloadVersion1 byte = 0x01
+)
 
 type PayloadRechargeToSideChain struct {
 	MerkleProof          []byte
 	MainChainTransaction []byte
+
+	MainChainTransactionHash common.Uint256
 }
 
 func (t *PayloadRechargeToSideChain) Data(version byte) []byte {
@@ -26,26 +31,45 @@ func (t *PayloadRechargeToSideChain) Data(version byte) []byte {
 }
 
 func (t *PayloadRechargeToSideChain) Serialize(w io.Writer, version byte) error {
-	err := common.WriteVarBytes(w, t.MerkleProof)
-	if err != nil {
-		return errors.New("[PayloadRechargeToSideChain], MerkleProof serialize failed.")
+	if version == RechargeToSideChainPayloadVersion0 {
+		err := common.WriteVarBytes(w, t.MerkleProof)
+		if err != nil {
+			return errors.New("[PayloadRechargeToSideChain], MerkleProof serialize failed.")
+		}
+		err = common.WriteVarBytes(w, t.MainChainTransaction)
+		if err != nil {
+			return errors.New("[PayloadRechargeToSideChain], DepositTransaction serialize failed.")
+		}
+	} else if version == RechargeToSideChainPayloadVersion1 {
+		err := t.MainChainTransactionHash.Serialize(w)
+		if err != nil {
+			return errors.New("[PayloadRechargeToSideChain], MainChainTransactionHash serialize failed.")
+		}
+	} else {
+		return errors.New("[PayloadRechargeToSideChain] serialize: invalid payload version.")
 	}
-	err = common.WriteVarBytes(w, t.MainChainTransaction)
-	if err != nil {
-		return errors.New("[PayloadRechargeToSideChain], DepositTransaction serialize failed.")
-	}
+
 	return nil
 }
 
 func (t *PayloadRechargeToSideChain) Deserialize(r io.Reader, version byte) error {
-	var err error
-	if t.MerkleProof, err = common.ReadVarBytes(r); err != nil {
-		return errors.New("[PayloadRechargeToSideChain], MerkleProof deserialize failed.")
+	if version == RechargeToSideChainPayloadVersion0 {
+		var err error
+		if t.MerkleProof, err = common.ReadVarBytes(r); err != nil {
+			return errors.New("[PayloadRechargeToSideChain], MerkleProof deserialize failed.")
+		}
+
+		if t.MainChainTransaction, err = common.ReadVarBytes(r); err != nil {
+			return errors.New("[PayloadRechargeToSideChain], DepositTransaction deserialize failed.")
+		}
+	} else if version == RechargeToSideChainPayloadVersion1 {
+		if err := t.MainChainTransactionHash.Deserialize(r); err != nil {
+			return errors.New("[PayloadRechargeToSideChain], MainChainTransactionHash deserialize failed.")
+		}
+	} else {
+		return errors.New("[PayloadRechargeToSideChain] deserialize: invalid payload version.")
 	}
 
-	if t.MainChainTransaction, err = common.ReadVarBytes(r); err != nil {
-		return errors.New("[PayloadRechargeToSideChain], DepositTransaction deserialize failed.")
-	}
 	return nil
 }
 

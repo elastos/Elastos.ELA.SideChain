@@ -4,6 +4,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/core"
 
 	. "github.com/elastos/Elastos.ELA.Utility/common"
+	ela "github.com/elastos/Elastos.ELA/core"
 )
 
 // IChainStore provides func with store package.
@@ -27,6 +28,9 @@ type IChainStore interface {
 
 	PersistMainchainTx(mainchainTxHash Uint256)
 	GetMainchainTx(mainchainTxHash Uint256) (byte, error)
+
+	PersistSpvMainchainTx(tx *ela.Transaction) error
+	GetSpvMainchainTx(txId Uint256) (*ela.Transaction, error)
 
 	GetCurrentBlockHash() Uint256
 	GetHeight() uint32

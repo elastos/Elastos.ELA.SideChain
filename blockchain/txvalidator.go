@@ -448,7 +448,7 @@ func (v *TransactionValidateBase) CheckAttributeProgramImpl(txn *core.Transactio
 
 func (v *TransactionValidateBase) CheckTransactionSignatureImpl(txn *core.Transaction) error {
 	if txn.IsRechargeToSideChainTx() {
-		if err := spv.VerifyTransaction(txn); err != nil {
+		if err := VerifyTransaction(txn); err != nil {
 			return err
 		}
 		return nil
@@ -646,6 +646,52 @@ func (v *TransactionValidateBase) CheckTransferCrossChainAssetTransactionImpl(tx
 
 	if totalInput-totalOutput < Fixed64(config.Parameters.MinCrossChainTxFee) {
 		return errors.New("Invalid transaction fee")
+	}
+
+	return nil
+}
+
+func VerifyTransaction(tx *core.Transaction) error {
+	payloadObj, ok := tx.Payload.(*core.PayloadRechargeToSideChain)
+	if !ok {
+		return errors.New("[VerifyTransaction] Invalid payload core.PayloadRechargeToSideChain")
+	}
+
+	if tx.PayloadVersion == core.RechargeToSideChainPayloadVersion0 {
+		proof := new(MerkleProof)
+		mainChainTransaction := new(ela.Transaction)
+
+		reader := bytes.NewReader(payloadObj.MerkleProof)
+		if err := proof.Deserialize(reader); err != nil {
+			return errors.New("[VerifyTransaction] RechargeToSideChain payload deserialize failed")
+		}
+		reader = bytes.NewReader(payloadObj.MainChainTransaction)
+		if err := mainChainTransaction.Deserialize(reader); err != nil {
+			return errors.New("[VerifyTransaction] RechargeToSideChain mainChainTransaction deserialize failed")
+		}
+
+		if err := spv.SpvService.VerifyTransaction(*proof, *mainChainTransaction); err != nil {
+			return errors.New("[VerifyTransaction] SPV module verify transaction failed.")
+		}
+	} else if tx.PayloadVersion == core.RechargeToSideChainPayloadVersion1 {
+		_, err := DefaultLedger.Store.GetSpvMainchainTx(payloadObj.MainChainTransactionHash)
+		if err != nil {
+			return errors.New("[VerifyTransaction] Main chain transaction not found")
+		}
+
+		return nil
+	} else {
+		return errors.New("[VerifyTransaction] invalid payload version.")
+	}
+
+	return nil
+}
+
+func VerifyElaHeader(hash *Uint256) error {
+	blockChain := spv.SpvService.HeaderStore()
+	_, err := blockChain.GetHeader(hash)
+	if err != nil {
+		return errors.New("[VerifyElaHeader] Verify ela header failed.")
 	}
 
 	return nil

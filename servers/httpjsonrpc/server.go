@@ -47,6 +47,7 @@ func InitRpcServer() {
 	MainMux["getblockbyheight"] = HttpServers.GetBlockByHeight
 	MainMux["getdestroyedtransactions"] = HttpServers.GetDestroyedTransactionsByHeight
 	MainMux["getexistdeposittransactions"] = HttpServers.GetExistDepositTransactions
+	MainMux["gettransactioninfo"] = HttpServers.GetTransactionInfoByHash
 
 	// aux interfaces
 	MainMux["help"] = HttpServers.AuxHelp

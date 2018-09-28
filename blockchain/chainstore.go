@@ -12,6 +12,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/log"
 
 	. "github.com/elastos/Elastos.ELA.Utility/common"
+	ela "github.com/elastos/Elastos.ELA/core"
 )
 
 const ValueNone = 0
@@ -420,6 +421,47 @@ func (c *ChainStore) GetMainchainTx(mainchainTxHash Uint256) (byte, error) {
 	}
 
 	return data[0], nil
+}
+
+func (c *ChainStore) PersistSpvMainchainTx(tx *ela.Transaction) error {
+	// generate key with DATA_Transaction prefix
+	key := new(bytes.Buffer)
+	// add transaction header prefix.
+	key.WriteByte(byte(IX_SPV_MainChain_tx))
+	// get transaction hash
+	hash := tx.Hash()
+	if err := hash.Serialize(key); err != nil {
+		return err
+	}
+	log.Debugf("transaction header + hash: %x", key)
+
+	// generate value
+	value := new(bytes.Buffer)
+	if err := tx.Serialize(value); err != nil {
+		return err
+	}
+	log.Debugf("transaction tx data: %x", value)
+
+	// put value
+	c.BatchPut(key.Bytes(), value.Bytes())
+
+	return nil
+}
+
+func (c *ChainStore) GetSpvMainchainTx(txId Uint256) (*ela.Transaction, error) {
+	key := append([]byte{byte(IX_SPV_MainChain_tx)}, txId.Bytes()...)
+	value, err := c.Get(key)
+	if err != nil {
+		return nil, err
+	}
+
+	var txn ela.Transaction
+	r := bytes.NewReader(value)
+	if err := txn.Deserialize(r); err != nil {
+		return nil, err
+	}
+
+	return &txn, nil
 }
 
 func (c *ChainStore) GetTransaction(txId Uint256) (*core.Transaction, uint32, error) {
