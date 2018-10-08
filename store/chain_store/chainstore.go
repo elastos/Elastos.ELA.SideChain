@@ -455,18 +455,21 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 
 func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCache *blockchain.DBCache) error {
 	payloadInvoke := tx.Payload.(*core.PayloadInvoke)
-	contract, err := c.GetContract(payloadInvoke.CodeHash)
-	if err != nil {
-		httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), INVOKE_TRANSACTION, err)
-		return err
-	}
-	state, err := states.GetStateValue(ST_Contract, contract)
-	if err != nil {
-		httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), INVOKE_TRANSACTION, err)
-		return err
+	constractState := states.NewContractState()
+	if !payloadInvoke.CodeHash.IsEqual(Uint168{}) {
+		contract, err := c.GetContract(payloadInvoke.CodeHash)
+		if err != nil {
+			httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), INVOKE_TRANSACTION, err)
+			return err
+		}
+		state, err := states.GetStateValue(ST_Contract, contract)
+		if err != nil {
+			httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), INVOKE_TRANSACTION, err)
+			return err
+		}
+		constractState = state.(*states.ContractState)
 	}
 
-	constractState := state.(*states.ContractState)
 	stateMachine := blockchain.NewStateMachine(dbCache, dbCache)//blockchain.NewDBCache(c)
 	smartcontract, err := smartcontract.NewSmartContract(&smartcontract.Context{
 		Caller:         payloadInvoke.ProgramHash,

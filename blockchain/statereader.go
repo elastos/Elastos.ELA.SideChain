@@ -5,15 +5,16 @@ import (
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
+	"github.com/elastos/Elastos.ELA/blockchain"
 
 	"github.com/elastos/Elastos.ELA.SideChain/vm"
 	"github.com/elastos/Elastos.ELA.SideChain/contract"
 	"github.com/elastos/Elastos.ELA.SideChain/core"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/types"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
+	"github.com/elastos/Elastos.ELA.SideChain/log"
+
 	"errors"
-	"fmt"
-	"github.com/elastos/Elastos.ELA/blockchain"
 )
 
 type StateReader struct {
@@ -103,30 +104,33 @@ func (s *StateReader) RuntimeGetTrigger(e *vm.ExecutionEngine) bool {
 
 func (s *StateReader) RuntimeNotify(e *vm.ExecutionEngine) bool {
 	item := vm.PopStackItem(e)
-
-	switch item.(type) {
-	case *types.Boolean:
-		fmt.Println(item.GetBoolean())
-	case *types.Integer:
-		fmt.Println(item.GetBigInteger())
-	case *types.ByteArray:
-		fmt.Println(item.GetByteArray())
-	case *types.GeneralInterface:
-		interop := item.GetInterface()
-		fmt.Println(interop)
-	case *types.Array:
-		items := item.GetArray();
-		for i := 0; i < len(items); i++ {
-			fmt.Println(items[i])
-		}
-
-	}
+	s.NotifyInfo(item)
 	return true
 }
 
+func (s *StateReader) NotifyInfo(item types.StackItem)  {
+	switch item.(type) {
+	case *types.Boolean:
+		log.Info("notifyInfo",item.GetBoolean())
+	case *types.Integer:
+		log.Info("notifyInfo",item.GetBigInteger())
+	case *types.ByteArray:
+		log.Info("notifyInfo",common.BytesToHexString(item.GetByteArray()))
+	case *types.GeneralInterface:
+		interop := item.GetInterface()
+		log.Info("notifyInfo",interop)
+	case *types.Array:
+		items := item.GetArray();
+		for i := 0; i < len(items); i++ {
+			s.NotifyInfo(items[i])
+		}
+	}
+}
+
 func (s *StateReader) RuntimeLog(e *vm.ExecutionEngine) bool {
-	msg := string(vm.PopByteArray(e))
-	fmt.Println("RuntimeLog msg:", msg)
+	data := vm.PopByteArray(e)
+	log.Info("log hex", common.BytesToHexString(data));
+	log.Info("RuntimeLog msg:", string(data))
 	return true
 }
 
@@ -582,7 +586,7 @@ func (s *StateReader) OutputGetCodeHash(e *vm.ExecutionEngine) bool {
 func (s *StateReader) AccountGetCodeHash(e *vm.ExecutionEngine) bool {
 	d := vm.PopInteropInterface(e)
 	if d == nil {
-		fmt.Println("Get AccountState error in function AccountGetCodeHash")
+		log.Info("Get AccountState error in function AccountGetCodeHash")
 		return false
 	}
 	accountState := d.(*states.AccountState).ProgramHash
@@ -594,12 +598,12 @@ func (s *StateReader) AccountGetBalance(e *vm.ExecutionEngine) bool {
 
 	d := vm.PopInteropInterface(e)
 	if d == nil {
-		fmt.Println("Get AccountState error in function AccountGetCodeHash")
+		log.Info("Get AccountState error in function AccountGetCodeHash")
 		return false
 	}
 	accountState := d.(*states.AccountState)
 	if accountState == nil {
-		fmt.Println("Get AccountState error in function AccountGetCodeHash")
+		log.Info("Get AccountState error in function AccountGetCodeHash")
 		return false
 	}
 

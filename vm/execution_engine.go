@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	 MAXSTEPS = 1200
+	 MAXSTEPS = -1
 	ratio = 100000
 	gasFree = 10 * 100000000;
 
@@ -187,6 +187,7 @@ func (e *ExecutionEngine) StepInto() error {
 		}
 		opCode = OpCode(op)
 	}
+
 	e.opCount++
 	state, err := e.ExecuteOp(OpCode(opCode), context)
 	switch state {
@@ -204,7 +205,7 @@ func (e *ExecutionEngine) ExecuteOp(opCode OpCode, context *ExecutionContext) (V
 	if opCode > PUSH16 && opCode != RET && context.PushOnly {
 		return FAULT, nil
 	}
-	if opCode > PUSH16 && e.opCount > e.maxSteps {
+	if opCode > PUSH16 && e.opCount > e.maxSteps && e.maxSteps > 0 {
 		return FAULT, nil
 	}
 	if opCode >= PUSHBYTES1 && opCode <= PUSHBYTES75 {
