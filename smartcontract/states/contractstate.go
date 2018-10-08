@@ -20,6 +20,15 @@ type ContractState struct {
 	ProgramHash common.Uint168
 }
 
+func NewContractState() *ContractState {
+	Code := &contract.FunctionCode{
+		ReturnType: contract.Void,
+	}
+	return &ContractState{
+		Code : Code,
+	}
+}
+
 func (contractState *ContractState) Serialize(w io.Writer) error {
 	err := contractState.StateBase.Serialize(w)
 	if err != nil {
