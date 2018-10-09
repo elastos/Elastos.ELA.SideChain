@@ -2,10 +2,10 @@ package blockchain
 
 import (
 	"math/big"
+	"errors"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
-	"github.com/elastos/Elastos.ELA/blockchain"
 
 	"github.com/elastos/Elastos.ELA.SideChain/vm"
 	"github.com/elastos/Elastos.ELA.SideChain/contract"
@@ -13,8 +13,6 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/vm/types"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
 	"github.com/elastos/Elastos.ELA.SideChain/log"
-
-	"errors"
 )
 
 type StateReader struct {
@@ -140,7 +138,7 @@ func (s *StateReader) RuntimeGetTime(e *vm.ExecutionEngine) bool {
 		height = DefaultLedger.Blockchain.BlockHeight
 		hash, err := DefaultLedger.Store.GetBlockHash(height)
 		if err != nil {
-			block, gerr := blockchain.GetGenesisBlock()
+			block, gerr := GetGenesisBlock()
 			if gerr != nil {
 				return false
 			}
@@ -297,7 +295,7 @@ func (s *StateReader) BlockChainGetTransaction(e *vm.ExecutionEngine) bool {
 	if err != nil {
 		return false
 	}
-	tx, _, err := blockchain.DefaultLedger.Store.GetTransaction(*hash)
+	tx, _, err := DefaultLedger.Store.GetTransaction(*hash)
 	if err != nil {
 		return false
 	}

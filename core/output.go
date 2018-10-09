@@ -75,3 +75,7 @@ func (o *Output) Bytes() []byte {
 	o.Serialize(buff)
 	return buff.Bytes()
 }
+
+func (o *Output) GetOutputLock() uint32 {
+	return o.OutputLock
+}
