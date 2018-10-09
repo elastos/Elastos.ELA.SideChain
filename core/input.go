@@ -55,3 +55,7 @@ func (o Input) Bytes() []byte {
 	o.Serialize(buf)
 	return buf.Bytes()
 }
+
+func (o Input) GetSequence() uint32  {
+	return o.Sequence
+}

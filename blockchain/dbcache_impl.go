@@ -106,6 +106,10 @@ func (cache *DBCache) AddBalance(hash common.Uint168, int2 *big.Int) {
 
 }
 
+func (cache *DBCache) GetChainStoreDb() IChainStore {
+	return cache.db
+}
+
 func (cache *DBCache) Suicide(codeHash common.Uint168) bool {
 	skey := storage.KeyToStr(&codeHash)
 	cache.RWSet.Delete(skey)

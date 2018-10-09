@@ -9,7 +9,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
 
 	. "github.com/elastos/Elastos.ELA.Utility/common"
-	)
+)
 
 //for different transaction types with different payload format
 //and transaction process methods
@@ -313,6 +313,10 @@ func (tx *Transaction) GetData() []byte {
 	buf := new(bytes.Buffer)
 	tx.SerializeUnsigned(buf)
 	return buf.Bytes()
+}
+
+func (tx *Transaction) GetLockTime() uint32 {
+	return tx.LockTime
 }
 
 func (tx *Transaction) GetDataContainer(programHash *Uint168) interfaces.IDataContainer {
