@@ -194,7 +194,7 @@ func (h *MsgHandlerV1) onVerAck(verAck *msg.VerAck) error {
 	go node.Heartbeat()
 
 	if LocalNode.NeedMoreAddresses() {
-		node.Send(new(msg.Addr))
+		node.Send(new(msg.GetAddr))
 	}
 	addr := node.Addr()
 	port := node.Port()
