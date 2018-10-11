@@ -77,8 +77,7 @@ func opSysCall(e *ExecutionEngine) (VMState, error) {
 }
 
 func opCallI(e *ExecutionEngine) (VMState, error) {
-	rvcount, err := e.context.OpReader.ReadByte()
-	fmt.Println("rvCount=", rvcount)
+	_, err := e.context.OpReader.ReadByte()
 	if err != nil {
 		return FAULT, err
 	}
