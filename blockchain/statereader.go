@@ -3,6 +3,9 @@ package blockchain
 import (
 	"math/big"
 	"errors"
+	"io"
+	"bytes"
+	"fmt"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
@@ -28,6 +31,8 @@ func NewStateReader() *StateReader {
 	stateReader.Register("Neo.Runtime.Notify", stateReader.RuntimeNotify)
 	stateReader.Register("Neo.Runtime.Log", stateReader.RuntimeLog)
 	stateReader.Register("Neo.Runtime.GetTime", stateReader.RuntimeGetTime)
+	stateReader.Register("Neo.Runtime.Serialize", stateReader.RuntimeSerialize)
+	stateReader.Register("Neo.Runtime.Deserialize", stateReader.RuntimeDerialize)
 
 	stateReader.Register("Neo.Blockchain.GetHeight", stateReader.BlockChainGetHeight)
 	stateReader.Register("Neo.Blockchain.GetHeader", stateReader.BlockChainGetHeader)
@@ -109,14 +114,14 @@ func (s *StateReader) RuntimeNotify(e *vm.ExecutionEngine) bool {
 func (s *StateReader) NotifyInfo(item types.StackItem)  {
 	switch item.(type) {
 	case *types.Boolean:
-		log.Info("notifyInfo",item.GetBoolean())
+		fmt.Println("notifyInfo",item.GetBoolean())
 	case *types.Integer:
-		log.Info("notifyInfo",item.GetBigInteger())
+		fmt.Println("notifyInfo",item.GetBigInteger())
 	case *types.ByteArray:
-		log.Info("notifyInfo",common.BytesToHexString(item.GetByteArray()))
+		fmt.Println("notifyInfo",common.BytesToHexString(item.GetByteArray()))
 	case *types.GeneralInterface:
 		interop := item.GetInterface()
-		log.Info("notifyInfo",interop)
+		fmt.Println("notifyInfo",interop)
 	case *types.Array:
 		items := item.GetArray();
 		for i := 0; i < len(items); i++ {
@@ -127,8 +132,7 @@ func (s *StateReader) NotifyInfo(item types.StackItem)  {
 
 func (s *StateReader) RuntimeLog(e *vm.ExecutionEngine) bool {
 	data := vm.PopByteArray(e)
-	log.Info("log hex", common.BytesToHexString(data));
-	log.Info("RuntimeLog msg:", string(data))
+	fmt.Println("RuntimeLog msg:", string(data))
 	return true
 }
 
@@ -150,6 +154,126 @@ func (s *StateReader) RuntimeGetTime(e *vm.ExecutionEngine) bool {
 	return true;
 }
 
+func (s *StateReader) RuntimeSerialize(e *vm.ExecutionEngine) bool {
+	buf := new(bytes.Buffer)
+	item := vm.PopStackItem(e)
+	s.SerializeStackItem(item, buf)
+	vm.PushData(e, buf.Bytes())
+	return true;
+}
+
+func (s *StateReader) RuntimeDerialize (e *vm.ExecutionEngine) bool {
+	data := vm.PopStackItem(e).GetByteArray()
+	reader := bytes.NewReader(data)
+	item, err := s.DerializeStackItem(reader)
+	if err != nil {
+		return false
+	}
+	vm.PushData(e, item)
+	return true;
+}
+
+func (s *StateReader) DerializeStackItem(r io.Reader) (types.StackItem, error) {
+	var itemType = make([]byte, 1)
+	_, err := r.Read(itemType)
+	if err != nil {
+		return nil, err
+	}
+
+	switch (types.StackItemType(itemType[0])) {
+	case types.TYPE_ByteArray:
+		bytes, err := common.ReadVarBytes(r)
+		if err != nil {
+			return nil, err
+		}
+		return types.NewByteArray(bytes), nil
+	case types.TYPE_Boolean:
+		data, err := common.ReadUint8(r)
+		if err != nil {
+			return nil, err
+		}
+		bytes := true
+		if data == 0 {
+			bytes = false
+		}
+		if err != nil {
+			return nil, err
+		}
+		return types.NewBoolean(bytes), nil
+	case types.TYPE_Integer:
+		data, err := common.ReadUint64(r)
+		if err != nil {
+			return nil, err
+		}
+		return types.NewInteger(big.NewInt(int64(data))), nil
+	case types.TYPE_Array, types.TYPE_Struct:
+		len, err := common.ReadVarUint(r, 0x00)
+		if err != nil {
+			return nil, err
+		}
+		var items = make([]types.StackItem, len)
+		for i := 0; i < int(len); i++ {
+			items[i], err = s.DerializeStackItem(r)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return types.NewArray(items), nil
+	case types.TYPE_Map:
+		dictionary := types.NewDictionary()
+		len, err := common.ReadVarUint(r, 0x00)
+		if err != nil {
+			return nil, err
+		}
+		for i := 0; i < int(len); i++ {
+			key, err := s.DerializeStackItem(r)
+			if err != nil {
+				return nil, err
+			}
+			value, err := s.DerializeStackItem(r)
+			if err != nil {
+				return nil, err
+			}
+			dictionary.PutStackItem(key, value)
+		}
+		return dictionary, nil
+	}
+	return nil, errors.New("error type")
+}
+
+func (s *StateReader) SerializeStackItem(item types.StackItem, w io.Writer) {
+	switch item.(type) {
+	case *types.Boolean:
+		w.Write([]byte{byte(types.TYPE_Boolean)})
+		w.Write(item.GetByteArray())
+	case *types.Integer:
+		w.Write([]byte{byte(types.TYPE_Integer)})
+		common.WriteUint64(w, item.GetBigInteger().Uint64())
+	case *types.ByteArray:
+		w.Write([]byte{byte(types.TYPE_ByteArray)})
+		common.WriteVarBytes(w, item.GetByteArray())
+	case *types.GeneralInterface:
+		w.Write([]byte{byte(types.TYPE_InteropInterface)})
+		w.Write(item.GetByteArray());
+	case *types.Array:
+		w.Write([]byte{byte(types.TYPE_Array)})
+		items := item.GetArray();
+		common.WriteVarUint(w, (uint64(len(items))))
+		for i := 0; i < len(items); i++ {
+			s.SerializeStackItem(items[i], w)
+		}
+	case *types.Dictionary:
+		dict := item.(*types.Dictionary)
+		w.Write([]byte{byte(types.TYPE_Map)})
+		dictMap := dict.GetMap();
+		common.WriteVarUint(w, (uint64(len(dictMap))))
+		for key := range dictMap {
+			s.SerializeStackItem(key, w)
+			s.SerializeStackItem(dictMap[key], w)
+		}
+	}
+}
+
 func (s *StateReader) CheckWitnessHash(engine *vm.ExecutionEngine, programHash common.Uint168) (bool, error) {
 	if engine.GetDataContainer() == nil {
 		return false, errors.New("CheckWitnessHash getDataContainer is null")
@@ -161,7 +285,6 @@ func (s *StateReader) CheckWitnessHash(engine *vm.ExecutionEngine, programHash c
 		return false, err
 	}
 	return contains(hashForVerify, programHash), nil
-
 }
 
 func (s *StateReader) CheckWitnessPublicKey(engine *vm.ExecutionEngine, publicKey *crypto.PublicKey) (bool, error) {
