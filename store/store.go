@@ -9,6 +9,7 @@ type IIterator interface {
 	Key() []byte
 	Value() []byte
 	Release()
+	Bytes() []byte
 }
 
 type IStore interface {

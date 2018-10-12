@@ -8,6 +8,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/vm/errors"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/types"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
+	"github.com/elastos/Elastos.ELA.SideChain/store"
 )
 
 type BigIntSorter []big.Int
@@ -360,6 +361,8 @@ func NewStackItem(data interface{}) (types.StackItem, error) {
 		stackItem = data.(*types.Array)
 	case *types.Boolean:
 		stackItem = data.(*types.Boolean)
+	case store.IIterator:
+		stackItem = types.NewGeneralInterface(data.(interfaces.IGeneralInterface))
 	default:
 		err = errors.ErrBadType
 	}

@@ -3,6 +3,7 @@ package states
 import (
 	"io"
 	"errors"
+	"bytes"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
 )
@@ -24,10 +25,12 @@ func (storageKey *StorageKey) Serialize(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = common.WriteVarBytes(w, storageKey.Key)
+	//used to support fuzzy search
+	w.Write(storageKey.Key)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -38,7 +41,9 @@ func (storageKey *StorageKey) Deserialize(r io.Reader) error {
 		return errors.New("StorageKey CodeHash Deserialize fail.")
 	}
 	storageKey.CodeHash = u
-	key, err := common.ReadVarBytes(r)
+
+	reader := r.(*bytes.Reader)
+	key, err := common.ReadBytes(reader, uint64(reader.Len()))
 	if err != nil {
 		return errors.New("StorageKey Key Deserialize fail.")
 	}
