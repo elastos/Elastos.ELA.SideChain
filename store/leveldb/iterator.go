@@ -39,3 +39,7 @@ func (it *Iterator) Value() []byte {
 func (it *Iterator) Release() {
 	it.iter.Release()
 }
+
+func (it *Iterator) Bytes() []byte {
+	return nil
+}

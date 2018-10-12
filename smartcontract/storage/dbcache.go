@@ -22,6 +22,7 @@ type DBCache interface {
 	GetCodeSize(common.Uint168) int
 	AddBalance(common.Uint168, *big.Int)
 	Suicide(codeHash common.Uint168) bool
+	FindInternal(prefix DataEntryPrefix, keyPrefix string) IIterator
 }
 
 type CloneCache struct {
@@ -67,3 +68,7 @@ func (cloneCache *CloneCache) TryDelete(prefix DataEntryPrefix, hash common.Uint
 	return result
 }
 
+func (cloneCache* CloneCache) Find(prefix DataEntryPrefix, keyPreFix string) IIterator{
+	iterator := cloneCache.innerCache.FindInternal(prefix, keyPreFix)
+	return iterator
+}

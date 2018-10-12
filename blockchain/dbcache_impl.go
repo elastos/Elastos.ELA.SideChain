@@ -115,3 +115,17 @@ func (cache *DBCache) Suicide(codeHash common.Uint168) bool {
 	cache.RWSet.Delete(skey)
 	return true;
 }
+
+func (cache *DBCache) FindInternal(prefix DataEntryPrefix, keyPrefix string) IIterator {
+	//data := make([]types.StackItem, 0)
+	//for key, value := range cache.RWSet.WriteSet {
+	//	if !value.IsDeleted && (keyPrefix == "" || key[0 : len(keyPrefix)] == keyPrefix) {
+	//		data = append(data,types.NewGeneralInterface(value.Item))
+	//	}
+	//}
+	k := make([]byte, 0)
+	k = append([]byte{byte(prefix)}, []byte(keyPrefix)...)
+	iter := cache.db.NewIterator(k)
+
+	return iter;
+}

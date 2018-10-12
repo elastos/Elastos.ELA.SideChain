@@ -36,6 +36,7 @@ func NewStateMachine(dbCache storage.DBCache, innerCache storage.DBCache) *State
 	stateMachine.StateReader.Register("Neo.Contract.Destroy", stateMachine.ContractDestory)
 	stateMachine.StateReader.Register("Neo.Storage.Put", stateMachine.StoragePut)
 	stateMachine.StateReader.Register("Neo.Storage.Delete", stateMachine.StorageDelete)
+	stateMachine.StateReader.Register("Neo.Storage.Find", stateMachine.StorageFind);
 	stateMachine.StateReader.Register("Neo.Contract.GetStorageContext", stateMachine.GetStorageContext)
 
 	return &stateMachine
@@ -255,7 +256,16 @@ func (s *StateMachine) StoragePut(engine *vm.ExecutionEngine) bool {
 		return false
 	}
 	context := opInterface.(*StorageContext)
+	if context.IsReadOnly {
+		return false
+	}
+	if exist, err := s.CheckStorageContext(context); !exist && err.Error() != "leveldb: not found" {
+		return false
+	}
 	key := vm.PopByteArray(engine)
+	if len(key) > 1024 {
+		return false
+	}
 	value := vm.PopByteArray(engine)
 	storageKey := states.NewStorageKey(context.codeHash, key)
 	s.CloneCache.GetInnerCache().GetWriteSet().Add(store.ST_Storage, storage.KeyToStr(storageKey), states.NewStorageItem(value))
@@ -265,10 +275,30 @@ func (s *StateMachine) StoragePut(engine *vm.ExecutionEngine) bool {
 func (s *StateMachine) StorageDelete(engine *vm.ExecutionEngine) bool {
 	opInterface := vm.PopInteropInterface(engine)
 	context := opInterface.(*StorageContext)
+	if context.IsReadOnly {
+		return false
+	}
+	if exist, err := s.CheckStorageContext(context); !exist && err.Error() != "leveldb: not found" {
+		return false
+	}
 	key := vm.PopByteArray(engine)
 	storageKey := states.NewStorageKey(context.codeHash, key)
 	s.CloneCache.GetInnerCache().GetWriteSet().Delete(storage.KeyToStr(storageKey))
 	return true
+}
+
+func (s *StateMachine) StorageFind(engine *vm.ExecutionEngine) bool {
+	opInterface := vm.PopInteropInterface(engine)
+	context := opInterface.(*StorageContext)
+	if exist, err := s.CheckStorageContext(context); !exist && err.Error() != "leveldb: not found" {
+		return false
+	}
+	key := vm.PopByteArray(engine)
+
+	storageKey := states.NewStorageKey(context.codeHash, key)
+	datas := s.CloneCache.Find(store.ST_Storage, storage.KeyToStr(storageKey))
+	vm.PushData(engine, datas)
+	return true;
 }
 
 func (s *StateMachine) GetStorageContext(engine *vm.ExecutionEngine) bool {

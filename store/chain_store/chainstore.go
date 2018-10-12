@@ -710,6 +710,19 @@ func (c *ChainStore) persistBlock(block *core.Block) {
 	blockchain.DefaultLedger.Blockchain.BCEvents.Notify(events.EventBlockPersistCompleted, block)
 }
 
+func (c *ChainStore) GetUnspents(txid Uint256) ([]*core.Output, error)  {
+	if ok, _ := c.ContainsUnspent(txid, 0); ok {
+		tx, _, err := c.GetTransaction(txid)
+		if err != nil {
+			return nil, err
+		}
+
+		return tx.Outputs, nil
+	}
+
+	return nil, errors.New("[GetUnspent] NOT ContainsUnspent.")
+}
+
 func (c *ChainStore) GetUnspent(txid Uint256, index uint16) (*core.Output, error) {
 	if ok, _ := c.ContainsUnspent(txid, index); ok {
 		tx, _, err := c.GetTransaction(txid)

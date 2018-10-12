@@ -35,6 +35,7 @@ type IChainStore interface {
 
 	RemoveHeaderListElement(hash Uint256)
 
+	GetUnspents(txid Uint256) ([]*core.Output, error)
 	GetUnspent(txid Uint256, index uint16) (*core.Output, error)
 	ContainsUnspent(txid Uint256, index uint16) (bool, error)
 	GetUnspentFromProgramHash(programHash Uint168, assetid Uint256) ([]*UTXO, error)

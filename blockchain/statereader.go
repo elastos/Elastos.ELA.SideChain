@@ -16,6 +16,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/vm/types"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
 	"github.com/elastos/Elastos.ELA.SideChain/log"
+	"github.com/elastos/Elastos.ELA.SideChain/store"
 )
 
 type StateReader struct {
@@ -38,9 +39,11 @@ func NewStateReader() *StateReader {
 	stateReader.Register("Neo.Blockchain.GetHeader", stateReader.BlockChainGetHeader)
 	stateReader.Register("Neo.Blockchain.GetBlock", stateReader.BlockChainGetBlock)
 	stateReader.Register("Neo.Blockchain.GetTransaction", stateReader.BlockChainGetTransaction)
+	stateReader.Register("Neo.Blockchain.GetTransactionHeight", stateReader.BlockchainGetTransactionHeight)
 	stateReader.Register("Neo.Blockchain.GetAccount", stateReader.BlockChainGetAccount)
 	stateReader.Register("Neo.Blockchain.GetAsset", stateReader.BlockChainGetAsset)
 
+	stateReader.Register("Neo.Header.GetIndex", stateReader.HeaderGetHeight);
 	stateReader.Register("Neo.Header.GetHash", stateReader.HeaderGetHash)
 	stateReader.Register("Neo.Header.GetVersion", stateReader.HeaderGetVersion)
 	stateReader.Register("Neo.Header.GetPrevHash", stateReader.HeaderGetPrevHash)
@@ -58,6 +61,8 @@ func NewStateReader() *StateReader {
 	stateReader.Register("Neo.Transaction.GetInputs", stateReader.TransactionGetInputs)
 	stateReader.Register("Neo.Transaction.GetOutputs", stateReader.TransactionGetOutputs)
 	stateReader.Register("Neo.Transaction.GetReferences", stateReader.TransactionGetReferences)
+	stateReader.Register("Neo.Transaction.GetUnspentCoins", stateReader.TransactionGetUnspentCoins)
+	stateReader.Register("Neo.InvocationTransaction.GetScript", stateReader.InvocationTransactionGetScript)
 
 	stateReader.Register("Neo.Attribute.GetUsage", stateReader.AttributeGetUsage)
 	stateReader.Register("Neo.Attribute.GetData", stateReader.AttributeGetData)
@@ -84,6 +89,12 @@ func NewStateReader() *StateReader {
 	stateReader.Register("Neo.Contract.GetScript", stateReader.ContractGetCode)
 
 	stateReader.Register("Neo.Storage.GetContext", stateReader.StorageGetContext)
+	stateReader.Register("Neo.Storage.GetReadOnlyContext", stateReader.StorageGetReadOnlyContext)
+	stateReader.Register("Neo.StorageContext.AsReadOnly", stateReader.StorageContextAsReadOnly);
+
+	stateReader.Register("Neo.Iterator.Key", stateReader.IteratorKey);
+	stateReader.Register("Neo.Iterator.Next", stateReader.EnumeratorNext);
+	stateReader.Register("Neo.Iterator.Value", stateReader.EnumeratorValue);
 
 	return &stateReader
 }
@@ -426,6 +437,20 @@ func (s *StateReader) BlockChainGetTransaction(e *vm.ExecutionEngine) bool {
 	return true
 }
 
+func (s *StateReader) BlockchainGetTransactionHeight(e *vm.ExecutionEngine) bool {
+	d := vm.PopByteArray(e)
+	hash, err := common.Uint256FromBytes(d)
+	if err != nil {
+		return false
+	}
+	_, height, err := DefaultLedger.Store.GetTransaction(*hash)
+	if err != nil {
+		return false
+	}
+	vm.PushData(e, height)
+	return true
+}
+
 func (s *StateReader) BlockChainGetAccount(e *vm.ExecutionEngine) bool {
 	d := vm.PopByteArray(e)
 	hash, err := common.Uint168FromBytes(d)
@@ -449,6 +474,16 @@ func (s *StateReader) BlockChainGetAsset(e *vm.ExecutionEngine) bool {
 		return false
 	}
 	vm.PushData(e, asset)
+	return true
+}
+
+func (s *StateReader) HeaderGetHeight(e *vm.ExecutionEngine) bool {
+	d := vm.PopInteropInterface(e)
+	if d == nil {
+		return false
+	}
+	index := d.(*core.Header).Height
+	vm.PushData(e, index)
 	return true
 }
 
@@ -537,12 +572,12 @@ func (s *StateReader) BlockGetTransactions(e *vm.ExecutionEngine) bool {
 }
 
 func (s *StateReader) BlockGetTransaction(e *vm.ExecutionEngine) bool {
-	index := vm.PopInt(e)
-	if index < 0 {
-		return false
-	}
 	d := vm.PopInteropInterface(e)
 	if d == nil {
+		return false
+	}
+	index := vm.PopInt(e)
+	if index < 0 {
 		return false
 	}
 	transactions := d.(*core.Block).Transactions
@@ -550,7 +585,7 @@ func (s *StateReader) BlockGetTransaction(e *vm.ExecutionEngine) bool {
 		return false
 	}
 	vm.PushData(e, transactions[index])
-	return false
+	return true
 }
 
 func (s *StateReader) TransactionGetHash(e *vm.ExecutionEngine) bool {
@@ -630,6 +665,40 @@ func (s *StateReader) TransactionGetReferences(e *vm.ExecutionEngine) bool {
 		list = append(list, types.NewGeneralInterface(v))//
 	}
 	vm.PushData(e, list)
+	return true
+}
+
+func (s *StateReader) TransactionGetUnspentCoins(e *vm.ExecutionEngine) bool {
+	d := vm.PopInteropInterface(e)
+	if d == nil {
+		return false
+	}
+	tx := d.(*core.Transaction)
+	unspentCoins, err := DefaultLedger.Store.GetUnspents(tx.Hash())
+	if err != nil {
+		return false
+	}
+
+	list := make([]types.StackItem, 0)
+	for _, v := range unspentCoins {
+		list = append(list, types.NewGeneralInterface(v))
+	}
+	vm.PushData(e, list)
+	return true;
+}
+
+func (s *StateReader) InvocationTransactionGetScript(e *vm.ExecutionEngine) bool {
+	d := vm.PopInteropInterface(e)
+	if d == nil {
+		return false
+	}
+	txtype := d.(*core.Transaction).TxType
+	if txtype != core.Invoke {
+		return false
+	}
+	payload := d.(*core.Transaction).Payload
+	script := payload.(*core.PayloadInvoke).Code
+	vm.PushData(e, script)
 	return true
 }
 
@@ -842,5 +911,61 @@ func (s *StateReader) StorageGetContext(e *vm.ExecutionEngine) bool {
 		return false
 	}
 	vm.PushData(e, NewStorageContext(codeHash))
+	return true
+}
+
+func (s *StateReader) StorageGetReadOnlyContext(e *vm.ExecutionEngine) bool {
+
+	codeHash, err := common.Uint168FromBytes(e.Hash160(e.ExecutingScript()))
+	if err != nil {
+		return false
+	}
+	context := NewStorageContext(codeHash)
+	context.IsReadOnly = true
+	vm.PushData(e, context)
+	return true
+}
+
+func (s *StateReader) StorageContextAsReadOnly(e *vm.ExecutionEngine) bool {
+	opInterface := vm.PopInteropInterface(e)
+	if opInterface == nil {
+		return false;
+	}
+	context := opInterface.(*StorageContext)
+	if !context.IsReadOnly {
+		newContext := NewStorageContext(context.codeHash)
+		newContext.IsReadOnly = true
+		vm.PushData(e, newContext)
+	}
+	return true;
+}
+
+func (s *StateReader) IteratorKey(e *vm.ExecutionEngine) bool {
+	opInterface := vm.PopInteropInterface(e)
+	if opInterface == nil {
+		return false;
+	}
+	iter := opInterface.(store.IIterator)
+	vm.PushData(e, iter.Key())
+	return true
+}
+
+func (s *StateReader) EnumeratorNext(e *vm.ExecutionEngine) bool {
+	opInterface := vm.PopInteropInterface(e)
+	if opInterface == nil {
+		return false;
+	}
+	iter := opInterface.(store.IIterator)
+	vm.PushData(e, iter.Next())
+	return true
+}
+
+func (s *StateReader) EnumeratorValue(e *vm.ExecutionEngine) bool {
+	opInterface := vm.PopInteropInterface(e)
+	if opInterface == nil {
+		return false;
+	}
+	iter := opInterface.(store.IIterator)
+	vm.PushData(e, iter.Value())
 	return true
 }
