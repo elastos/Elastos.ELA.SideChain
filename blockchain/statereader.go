@@ -17,6 +17,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
 	"github.com/elastos/Elastos.ELA.SideChain/log"
 	"github.com/elastos/Elastos.ELA.SideChain/store"
+	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/enumerators"
 )
 
 type StateReader struct {
@@ -95,6 +96,9 @@ func NewStateReader() *StateReader {
 	stateReader.Register("Neo.Iterator.Key", stateReader.IteratorKey);
 	stateReader.Register("Neo.Iterator.Next", stateReader.EnumeratorNext);
 	stateReader.Register("Neo.Iterator.Value", stateReader.EnumeratorValue);
+	stateReader.Register("Neo.Iterator.Keys", stateReader.IteratorKeys);
+	stateReader.Register("Neo.Iterator.Values", stateReader.IteratorValues);
+
 
 	return &stateReader
 }
@@ -144,6 +148,7 @@ func (s *StateReader) NotifyInfo(item types.StackItem)  {
 func (s *StateReader) RuntimeLog(e *vm.ExecutionEngine) bool {
 	data := vm.PopByteArray(e)
 	fmt.Println("RuntimeLog msg:", string(data))
+	log.Info(string(data))
 	return true
 }
 
@@ -967,5 +972,29 @@ func (s *StateReader) EnumeratorValue(e *vm.ExecutionEngine) bool {
 	}
 	iter := opInterface.(store.IIterator)
 	vm.PushData(e, iter.Value())
+	return true
+}
+
+func (s *StateReader) IteratorKeys(e *vm.ExecutionEngine) bool {
+
+	opInterface := vm.PopInteropInterface(e)
+	if opInterface == nil {
+		return false;
+	}
+	iter := opInterface.(store.IIterator)
+	iterKeys := enumerators.NewIteratorKeys(iter)
+	vm.PushData(e, iterKeys)
+	return true
+}
+
+func (s *StateReader) IteratorValues(e *vm.ExecutionEngine) bool {
+
+	opInterface := vm.PopInteropInterface(e)
+	if opInterface == nil {
+		return false;
+	}
+	iter := opInterface.(store.IIterator)
+	iterValues := enumerators.NewIteratorValues(iter)
+	vm.PushData(e, iterValues)
 	return true
 }

@@ -7,7 +7,7 @@ import (
 	"errors"
 )
 
-func opCheckSequence(e *ExecutionEngine) (VMState, error) {
+func opCheckSequenceVerify(e *ExecutionEngine) (VMState, error) {
 	if e.dataContainer == nil {
 		return FAULT, nil
 	}
@@ -27,7 +27,7 @@ func opCheckSequence(e *ExecutionEngine) (VMState, error) {
 	return NONE, nil
 }
 
-func opCheckLockTime(e *ExecutionEngine) (VMState, error) {
+func opCheckLockTimeVerify(e *ExecutionEngine) (VMState, error) {
 	if e.dataContainer == nil {
 		return FAULT, nil
 	}
