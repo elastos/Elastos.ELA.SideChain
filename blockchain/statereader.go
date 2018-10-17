@@ -130,13 +130,17 @@ func (s *StateReader) NotifyInfo(item types.StackItem)  {
 	switch item.(type) {
 	case *types.Boolean:
 		fmt.Println("notifyInfo",item.GetBoolean())
+		log.Info(item.GetBoolean())
 	case *types.Integer:
 		fmt.Println("notifyInfo",item.GetBigInteger())
+		log.Info(item.GetBigInteger())
 	case *types.ByteArray:
 		fmt.Println("notifyInfo",common.BytesToHexString(item.GetByteArray()))
+		log.Info(common.BytesToHexString(item.GetByteArray()))
 	case *types.GeneralInterface:
 		interop := item.GetInterface()
 		fmt.Println("notifyInfo",interop)
+		log.Info(string(interop.Bytes()))
 	case *types.Array:
 		items := item.GetArray();
 		for i := 0; i < len(items); i++ {
@@ -147,7 +151,6 @@ func (s *StateReader) NotifyInfo(item types.StackItem)  {
 
 func (s *StateReader) RuntimeLog(e *vm.ExecutionEngine) bool {
 	data := vm.PopByteArray(e)
-	fmt.Println("RuntimeLog msg:", string(data))
 	log.Info(string(data))
 	return true
 }
@@ -906,7 +909,7 @@ func (s *StateReader) ContractGetCode(e *vm.ExecutionEngine) bool {
 		return false
 	}
 	assetState := d.(*states.ContractState)
-	vm.Push(e, assetState.Code.Code)
+	vm.PushData(e, assetState.Code.Code)
 	return true
 }
 

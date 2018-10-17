@@ -22,6 +22,7 @@ import (
 
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain/common"
 )
 
 const ValueNone = 0
@@ -434,10 +435,8 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 
 	codeHash := payloadDeploy.Code.CodeHash()
 	//because neo compiler use [AppCall(hash)] ，will change hash168 to hash160,so we deploy contract use hash160
-	hashBytes := make([]byte, len(codeHash) - 1)
-	data := codeHash.Bytes();
-	copy(hashBytes, data[0 : len(codeHash) - 1])
-	dbCache.GetOrAdd(ST_Contract, string(hashBytes), &states.ContractState{
+	data := common.UInt168ToUInt160(&codeHash)
+	dbCache.GetOrAdd(ST_Contract, string(data), &states.ContractState{
 		Code:        payloadDeploy.Code,
 		Name:        payloadDeploy.Name,
 		Version:     payloadDeploy.CodeVersion,
@@ -963,10 +962,7 @@ func (c *ChainStore) GetAssets() map[Uint256]*core.Asset {
 func (c *ChainStore) GetContract(codeHash Uint168) ([]byte, error) {
 	prefix := []byte{byte(ST_Contract)}
 
-	hashBytes := make([]byte, len(codeHash) - 1)
-	data := codeHash.Bytes();
-	copy(hashBytes, data[0 : len(codeHash) - 1])
-
+	hashBytes := common.UInt168ToUInt160(&codeHash)
 	bData, err_get := c.Get(append(prefix, hashBytes...))
 	if err_get != nil {
 		return nil, err_get

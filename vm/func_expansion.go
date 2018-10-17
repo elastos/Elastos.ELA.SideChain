@@ -32,18 +32,9 @@ func opCheckLockTimeVerify(e *ExecutionEngine) (VMState, error) {
 		return FAULT, nil
 	}
 	txn := e.GetDataContainer().(interfaces.IUtxolock)
-	references, err := e.table.GetTxReference(&e.dataContainer)
-	if err != nil {
-		return FAULT, err
+	lockTime := PopBigInt(e)
+	if txn.GetLockTime() < uint32(lockTime.Uint64()) {
+		return FAULT, errors.New("UTXO output locked")
 	}
-	for _, output := range references {
-		if output.GetOutputLock() == 0 {
-			continue
-		}
-		if txn.GetLockTime() < output.GetOutputLock() {
-			return FAULT, errors.New("UTXO output locked")
-		}
-	}
-
 	return NONE, nil
 }
