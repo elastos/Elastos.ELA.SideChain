@@ -151,7 +151,6 @@ func (s *StateReader) NotifyInfo(item types.StackItem)  {
 
 func (s *StateReader) RuntimeLog(e *vm.ExecutionEngine) bool {
 	data := vm.PopByteArray(e)
-	fmt.Println("RuntimeLog msg:", string(data))
 	log.Info(string(data))
 	return true
 }
