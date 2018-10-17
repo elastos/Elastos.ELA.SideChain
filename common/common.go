@@ -39,3 +39,10 @@ func BytesToInt(b []byte) []int {
 	}
 	return i
 }
+
+func UInt168ToUInt160(hash *common.Uint168) []byte {
+	hashBytes := make([]byte, len(hash) - 1)
+	data := hash.Bytes();
+	copy(hashBytes, data[1 : len(hash)])
+	return hashBytes
+}

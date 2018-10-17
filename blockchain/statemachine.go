@@ -12,6 +12,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
 	"github.com/elastos/Elastos.ELA.SideChain/store"
 	"github.com/elastos/Elastos.ELA.SideChain/contract"
+	commonSide "github.com/elastos/Elastos.ELA.SideChain/common"
 
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
 	"github.com/elastos/Elastos.ELA.Utility/common"
@@ -30,6 +31,7 @@ func NewStateMachine(dbCache storage.DBCache, innerCache storage.DBCache) *State
 
 	stateMachine.StateReader.Register("Neo.Asset.Create", stateMachine.CreateAsset)
 	stateMachine.StateReader.Register("Neo.Contract.Create", stateMachine.CreateContract)
+	stateMachine.StateReader.Register("Neo.Contract.Migrate", stateMachine.ContractMigrate);
 	stateMachine.StateReader.Register("Neo.Blockchain.GetContract", stateMachine.GetContract)
 	stateMachine.StateReader.Register("Neo.Asset.Renew", stateMachine.AssetRenew)
 	stateMachine.StateReader.Register("Neo.Storage.Get", stateMachine.StorageGet)
@@ -107,7 +109,7 @@ func (s *StateMachine) CreateAsset(engine *vm.ExecutionEngine) bool {
 
 func (s *StateMachine) CreateContract(engine *vm.ExecutionEngine) bool {
 	codeByte := vm.PopByteArray(engine)
-	if len(codeByte) > 1024*1024 {
+	if len(codeByte) > int(vm.MaxItemSize) {
 		return false
 	}
 	parameters := vm.PopByteArray(engine)
@@ -153,7 +155,8 @@ func (s *StateMachine) CreateContract(engine *vm.ExecutionEngine) bool {
 		Description: common.BytesToHexString(descByte),
 	}
 	codeHash := funcCode.CodeHash()
-	s.CloneCache.GetInnerCache().GetOrAdd(store.ST_Contract, string(codeHash.Bytes()), &contractState)
+	key := commonSide.UInt168ToUInt160(&codeHash)
+	s.CloneCache.GetInnerCache().GetOrAdd(store.ST_Contract, string(key), &contractState)
 	vm.PushData(engine, contractState)
 	return true
 }
@@ -162,17 +165,97 @@ func (s *StateMachine) GetContract(engine *vm.ExecutionEngine) bool {
 	hashByte := vm.PopByteArray(engine)
 	hash, err := common.Uint168FromBytes(hashByte)
 	if err != nil {
-		fmt.Println(err)
 		return false
 	}
-	keyStr := string(hash.Bytes()[0 : len(hash) -  1])
-	item, err := s.CloneCache.TryGet(store.ST_Contract, keyStr)
+	keyStr := commonSide.UInt168ToUInt160(hash)
+	item, err := s.CloneCache.TryGet(store.ST_Contract, string(keyStr))
 	if err != nil {
-		fmt.Println(err)
 		return false
 	}
 	vm.PushData(engine, item.(*states.ContractState))
 	return true
+}
+
+func (s *StateMachine) ContractMigrate(engine *vm.ExecutionEngine) bool {
+	codeByte := vm.PopByteArray(engine)
+	if codeByte[len(codeByte) - 1] != common.SMARTCONTRACT {
+		codeByte = append(codeByte, common.SMARTCONTRACT)
+	}
+	if (len(codeByte) > int(vm.MaxItemSize)) {
+		return false
+	}
+	parameters := vm.PopByteArray(engine)
+	if len(parameters) > 252 {
+		return false
+	}
+	parameterList := make([]contract.ContractParameterType, 0)
+	for _, v := range parameters {
+		parameterList = append(parameterList, contract.ContractParameterType(v))
+	}
+	returnType := vm.PopInt(engine)
+	needStorage := vm.PopBoolean(engine)
+	nameByte := vm.PopByteArray(engine)
+	if len(nameByte) > 252 {
+		return false
+	}
+	versionByte := vm.PopByteArray(engine)
+	if len(versionByte) > 252 {
+		return false
+	}
+	authorByte := vm.PopByteArray(engine)
+	if len(authorByte) > 252 {
+		return false
+	}
+	emailByte := vm.PopByteArray(engine)
+	if len(emailByte) > 252 {
+		return false
+	}
+	descByte := vm.PopByteArray(engine)
+	if len(descByte) > 65536 {
+		return false
+	}
+
+	funcCode := &contract.FunctionCode{
+		Code:           codeByte,
+		ParameterTypes: parameterList,
+		ReturnType:     contract.ContractParameterType(returnType),
+	}
+	codeHash := funcCode.CodeHash()
+	keyStr := commonSide.UInt168ToUInt160(&codeHash)
+	item, err := s.CloneCache.TryGet(store.ST_Contract, string(keyStr))
+	if err != nil {
+		item = &states.ContractState{
+			Code:        funcCode,
+			Name:        common.BytesToHexString(nameByte),
+			Version:     common.BytesToHexString(versionByte),
+			Author:      common.BytesToHexString(authorByte),
+			Email:       common.BytesToHexString(emailByte),
+			Description: common.BytesToHexString(descByte),
+		}
+		s.CloneCache.GetInnerCache().GetOrAdd(store.ST_Contract, string(keyStr), item)
+		if needStorage {
+			data := engine.ExecutingScript()
+			if data == nil {
+				return false
+			}
+			oldHash, err := crypto.ToProgramHash(data)
+			if err != nil {
+				return false
+			}
+			storageKey := states.NewStorageKey(oldHash, []byte{})
+			datas := s.CloneCache.Find(store.ST_Storage, storage.KeyToStr(storageKey))
+			for datas.Next() {
+				key := datas.Key()
+				value := datas.Value()
+				reader := bytes.NewReader(key[1 : len(key)])
+				storageKey.Deserialize(reader)
+				storageKey.CodeHash = &codeHash
+				s.CloneCache.GetInnerCache().GetWriteSet().Add(store.ST_Storage, storage.KeyToStr(storageKey), states.NewStorageItem(value))
+			}
+		}
+	}
+	vm.PushData(engine, item.(*states.ContractState))
+	return s.ContractDestory(engine)
 }
 
 func (s *StateMachine) AssetRenew(engine *vm.ExecutionEngine) bool {
@@ -202,10 +285,9 @@ func (s *StateMachine) ContractDestory(engine *vm.ExecutionEngine) bool {
 	}
 	hash, err := crypto.ToProgramHash(data)
 	if err != nil {
-		fmt.Println(err)
 		return false
 	}
-	keyStr := string(hash.Bytes()[0 : len(hash) -  1])
+	keyStr := string(commonSide.UInt168ToUInt160(hash))
 	item, err := s.CloneCache.TryGet(store.ST_Contract, keyStr)
 	if err != nil || item == nil {
 		fmt.Println(err)

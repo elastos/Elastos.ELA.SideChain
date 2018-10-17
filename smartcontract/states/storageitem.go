@@ -34,7 +34,7 @@ func (storageItem *StorageItem) Deserialize(r io.Reader) error {
 	storageItem.StateBase = *stateBase
 	value, err := common.ReadVarBytes(r)
 	if err != nil {
-		return errors.New("ContractState Code Deserialize fail.")
+		return errors.New("StorageItem Code Deserialize fail.")
 	}
 	storageItem.Value = value
 	return nil

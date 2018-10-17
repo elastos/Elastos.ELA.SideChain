@@ -5,6 +5,7 @@ import (
 
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
 	. "github.com/elastos/Elastos.ELA.SideChain/store"
+	side "github.com/elastos/Elastos.ELA.SideChain/common"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
 )
@@ -60,10 +61,8 @@ func (cloneCache *CloneCache) TryGet(prefix DataEntryPrefix, key string) (states
 }
 
 func (cloneCache *CloneCache) TryDelete(prefix DataEntryPrefix, hash common.Uint168) bool {
-
-	cloneCache.innerCache.GetWriteSet().Delete(string(hash.Bytes()))
-
-	keyStr := string(hash.Bytes()[0 : len(hash) -  1])
+	keyStr := string(side.UInt168ToUInt160(&hash))
+	cloneCache.innerCache.GetWriteSet().Delete(keyStr)
 	result := cloneCache.dbCache.TryDelete(prefix, keyStr)
 	return result
 }

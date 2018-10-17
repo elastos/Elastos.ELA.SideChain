@@ -7,7 +7,7 @@ import (
 	"errors"
 )
 
-func opCheckSequence(e *ExecutionEngine) (VMState, error) {
+func opCheckSequenceVerify(e *ExecutionEngine) (VMState, error) {
 	if e.dataContainer == nil {
 		return FAULT, nil
 	}
@@ -27,23 +27,14 @@ func opCheckSequence(e *ExecutionEngine) (VMState, error) {
 	return NONE, nil
 }
 
-func opCheckLockTime(e *ExecutionEngine) (VMState, error) {
+func opCheckLockTimeVerify(e *ExecutionEngine) (VMState, error) {
 	if e.dataContainer == nil {
 		return FAULT, nil
 	}
 	txn := e.GetDataContainer().(interfaces.IUtxolock)
-	references, err := e.table.GetTxReference(&e.dataContainer)
-	if err != nil {
-		return FAULT, err
+	lockTime := PopBigInt(e)
+	if txn.GetLockTime() < uint32(lockTime.Uint64()) {
+		return FAULT, errors.New("UTXO output locked")
 	}
-	for _, output := range references {
-		if output.GetOutputLock() == 0 {
-			continue
-		}
-		if txn.GetLockTime() < output.GetOutputLock() {
-			return FAULT, errors.New("UTXO output locked")
-		}
-	}
-
 	return NONE, nil
 }
