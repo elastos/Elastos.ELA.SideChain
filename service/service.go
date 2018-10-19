@@ -675,6 +675,32 @@ func (s *HttpService) GetUnspendsByAsset(param Params) map[string]interface{} {
 	return ResponsePack(Success, UTXOoutputs)
 }
 
+func (s *HttpService) GetAssetList(params Params) map[string]interface{} {
+	assets := s.cfg.Chain.GetAssets()
+
+	type AssetInfo struct {
+		ID          string `json:"id"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Precision   int    `json:"precision"`
+		AssetType   int    `json:"assettype"`
+		RecordType  int    `jso:"recordtype"`
+	}
+
+	var assetInfo []AssetInfo
+	for hash, asset := range assets {
+		assetInfo = append(assetInfo, AssetInfo{
+			hash.String(),
+			asset.Name,
+			asset.Description,
+			int(asset.Precision),
+			int(asset.AssetType),
+			int(asset.RecordType),
+		})
+	}
+	return ResponsePack(Success, assetInfo)
+}
+
 //Transaction
 func (s *HttpService) GetTransactionByHash(param Params) map[string]interface{} {
 	str, ok := param.String("hash")
