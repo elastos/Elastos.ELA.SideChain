@@ -19,6 +19,8 @@ const (
 	EventNodeDisconnect          EventType = 4
 	EventRollbackTransaction     EventType = 5
 	EventNewTransactionPutInPool EventType = 6
+	EventRunTimeNotify           EventType = 7
+	EventRunTimeLog              EventType = 8
 )
 
 type Event struct {
@@ -62,4 +64,9 @@ func (e *Event) Notify(eventtype EventType, value interface{}) (err error) {
 		go func(eventfunc EventFunc, value interface{}) { eventfunc(value) }(event, value)
 	}
 	return
+}
+
+func (e *Event) HashSubscriber(eventtype EventType) bool {
+	_, ok := e.subscribers[eventtype]
+	return ok
 }
