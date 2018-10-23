@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"bytes"
-	"fmt"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
@@ -18,15 +17,20 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/log"
 	"github.com/elastos/Elastos.ELA.SideChain/store"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/enumerators"
+	"github.com/elastos/Elastos.ELA.SideChain/events"
 )
 
 type StateReader struct {
 	serviceMap map[string]func(engine *vm.ExecutionEngine) bool
+	NotifyEvent *events.Event
+	LogEvent *events.Event
 }
 
 func NewStateReader() *StateReader {
 	var stateReader StateReader
 	stateReader.serviceMap = make(map[string]func(*vm.ExecutionEngine) bool, 0)
+	stateReader.NotifyEvent = events.NewEvent()
+	stateReader.LogEvent = events.NewEvent()
 
 	stateReader.Register("Neo.Runtime.GetTrigger", stateReader.RuntimeGetTrigger)
 	stateReader.Register("Neo.Runtime.CheckWitness", stateReader.RuntimeCheckWitness)
@@ -122,36 +126,17 @@ func (s *StateReader) RuntimeGetTrigger(e *vm.ExecutionEngine) bool {
 
 func (s *StateReader) RuntimeNotify(e *vm.ExecutionEngine) bool {
 	item := vm.PopStackItem(e)
-	s.NotifyInfo(item)
+	if s.NotifyEvent != nil && s.NotifyEvent.HashSubscriber(events.EventRunTimeNotify) {
+		s.NotifyEvent.Notify(events.EventRunTimeNotify, item)
+	}
 	return true
 }
 
-func (s *StateReader) NotifyInfo(item types.StackItem)  {
-	switch item.(type) {
-	case *types.Boolean:
-		fmt.Println("notifyInfo",item.GetBoolean())
-		log.Info(item.GetBoolean())
-	case *types.Integer:
-		fmt.Println("notifyInfo",item.GetBigInteger())
-		log.Info(item.GetBigInteger())
-	case *types.ByteArray:
-		fmt.Println("notifyInfo",common.BytesToHexString(item.GetByteArray()))
-		log.Info(common.BytesToHexString(item.GetByteArray()))
-	case *types.GeneralInterface:
-		interop := item.GetInterface()
-		fmt.Println("notifyInfo",interop)
-		log.Info(string(interop.Bytes()))
-	case *types.Array:
-		items := item.GetArray();
-		for i := 0; i < len(items); i++ {
-			s.NotifyInfo(items[i])
-		}
-	}
-}
-
 func (s *StateReader) RuntimeLog(e *vm.ExecutionEngine) bool {
-	data := vm.PopByteArray(e)
-	log.Info(string(data))
+	data := vm.PopStackItem(e)
+	if s.LogEvent != nil && s.LogEvent.HashSubscriber(events.EventRunTimeLog) {
+		s.LogEvent.Notify(events.EventRunTimeLog, data)
+	}
 	return true
 }
 

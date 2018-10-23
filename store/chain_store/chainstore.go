@@ -23,6 +23,7 @@ import (
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
 	"github.com/elastos/Elastos.ELA.SideChain/common"
+	"github.com/elastos/Elastos.ELA.SideChain/vm/types"
 )
 
 const ValueNone = 0
@@ -470,6 +471,8 @@ func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCach
 	}
 
 	stateMachine := blockchain.NewStateMachine(dbCache, dbCache)//blockchain.NewDBCache(c)
+	stateMachine.StateReader.NotifyEvent.Subscribe(events.EventRunTimeNotify, c.onContractNotify)
+	stateMachine.StateReader.LogEvent.Subscribe(events.EventRunTimeLog, onContractLog)
 	smartcontract, err := smartcontract.NewSmartContract(&smartcontract.Context{
 		Caller:         payloadInvoke.ProgramHash,
 		StateMachine:   stateMachine,
@@ -500,6 +503,38 @@ func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCach
 	dbCache.Commit()
 	httpwebsocket.PushResult(tx.Hash(), int64(Success), INVOKE_TRANSACTION, ret)
 	return nil
+}
+
+func (c *ChainStore) onContractNotify(item interface{}) {
+	data := item.(types.StackItem)
+	notifyInfo(data)
+}
+
+
+func notifyInfo(item types.StackItem)  {
+	switch item.(type) {
+	case *types.Boolean:
+		log.Info("notifyInfo", item.GetBoolean())
+	case *types.Integer:
+		log.Info("notifyInfo", item.GetBigInteger())
+	case *types.ByteArray:
+		log.Info("notifyInfo", BytesToHexString(item.GetByteArray()))
+	case *types.GeneralInterface:
+		interop := item.GetInterface()
+		log.Info("notifyInfo", string(interop.Bytes()))
+	case *types.Array:
+		items := item.GetArray();
+		for i := 0; i < len(items); i++ {
+			notifyInfo(items[i])
+		}
+	}
+}
+
+
+func onContractLog(item interface{})  {
+	data := item.(types.StackItem)
+	msg := data.GetByteArray()
+	log.Info("onRunTimeLog:", string(msg))
 }
 
 func (c *ChainStore) GetTransaction(txId Uint256) (*core.Transaction, uint32, error) {
