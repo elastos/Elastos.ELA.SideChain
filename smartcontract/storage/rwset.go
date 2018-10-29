@@ -33,8 +33,8 @@ func NewRWSet() *RWSet {
 }
 
 func (rw *RWSet) Add(prefix DataEntryPrefix, key string, value states.IStateValueInterface) error {
-	_, ok := rw.WriteSet[key]
-	if ok {
+	data, ok := rw.WriteSet[key]
+	if ok && !data.IsDeleted {
 		return errors.New("RWSet is allready added:" + key)
 	}
 	rw.WriteSet[key] = &Write{

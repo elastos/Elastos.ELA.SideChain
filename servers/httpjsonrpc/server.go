@@ -56,6 +56,7 @@ func StartRPCServer() {
 	mainMux["togglemining"] = ToggleMining
 	mainMux["discretemining"] = DiscreteMining
 	mainMux["invokescript"] = InvokeScript
+	mainMux["invokefunction"] = InvokeFunction
 
 	err := http.ListenAndServe(":"+strconv.Itoa(Parameters.HttpJsonPort), nil)
 	if err != nil {

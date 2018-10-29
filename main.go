@@ -19,7 +19,6 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/store/chain_store"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
-	"github.com/elastos/Elastos.ELA.SideChain/store/leveldb"
 )
 
 const (
@@ -38,15 +37,6 @@ func init() {
 	} else {
 		coreNum = DefaultMultiCoreNum
 	}
-
-	st, err := leveldb.NewLevelDB("testStore")
-	if err != nil {
-		return
-	}
-	store := &chain_store.ChainStore{
-		IStore:             st,
-	}
-	servers.Store = store
 
 	address, err := common.Uint168FromAddress(config.Parameters.FoundationAddress)
 	if err != nil {
@@ -85,6 +75,9 @@ func main() {
 		log.Fatal(err, "BlockChain initialize failed")
 		goto ERROR
 	}
+
+	servers.Store = blockchain.DefaultLedger.Store
+	servers.Table = chain_store.NewCacheCodeTable(blockchain.NewDBCache(servers.Store))
 
 	log.Info("2. SPV module init")
 	if err := spv.SpvInit(); err != nil {
