@@ -26,28 +26,31 @@ type FunctionCode struct {
 
 // method of SerializableData
 func (fc *FunctionCode) Serialize(w io.Writer) error {
-	err := common.WriteUint8(w, uint8(fc.ReturnType))
+	err := common.WriteVarBytes(w, fc.Code)
 	if err != nil {
 		return err
 	}
+
 	err = common.WriteVarBytes(w, ContractParameterTypeToByte(fc.ParameterTypes))
 	if err != nil {
 		return err
 	}
-	err = common.WriteVarBytes(w,fc.Code)
+
+	err = common.WriteUint8(w, uint8(fc.ReturnType))
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
 // method of SerializableData
 func (fc *FunctionCode) Deserialize(r io.Reader) error {
-	returnType, err := common.ReadUint8(r)
+	code, err := common.ReadVarBytes(r)
 	if err != nil {
 		return err
 	}
-	fc.ReturnType = ContractParameterType(returnType)
+	fc.Code = code
 
 	parameterTypes, err := common.ReadVarBytes(r)
 	if err != nil {
@@ -55,10 +58,11 @@ func (fc *FunctionCode) Deserialize(r io.Reader) error {
 	}
 	fc.ParameterTypes = ByteToContractParameterType(parameterTypes)
 
-	fc.Code,err = common.ReadVarBytes(r)
+	returnType, err := common.ReadUint8(r)
 	if err != nil {
 		return err
 	}
+	fc.ReturnType = ContractParameterType(returnType)
 
 	return nil
 }
