@@ -1,11 +1,11 @@
 package chain_store
 
 import (
-	"github.com/elastos/Elastos.ELA.SideChain/store"
 	"github.com/elastos/Elastos.ELA.SideChain/smartcontract/states"
 	"github.com/elastos/Elastos.ELA.SideChain/blockchain"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
 	"github.com/elastos/Elastos.ELA.SideChain/core"
+	"github.com/elastos/Elastos.ELA.SideChain/store"
 )
 
 type CacheCodeTable struct {

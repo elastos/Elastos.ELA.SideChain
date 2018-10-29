@@ -18,6 +18,7 @@ import (
 
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.SideChain/vm"
+	"github.com/elastos/Elastos.ELA.SideChain/common"
 )
 
 const (
@@ -496,6 +497,84 @@ func InvokeScript(param Params) map[string]interface{} {
 	ret["gas_consumed"] = engine.GetGasConsumed()
 	ret["result"] = BytesToHexString(vm.PopByteArray(engine))
 	return ResponsePack(Success, ret)
+}
+
+func InvokeFunction(params Params) map[string]interface{} {
+	buffer := new(bytes.Buffer)
+	paramBuilder := vm.NewParamsBuider(buffer)
+
+	args, ok := params["params"]
+	paraseJsonToBytes(args.([]interface{}), paramBuilder)
+
+	if !ok {
+		return ResponsePack(InvalidParams, "")
+	}
+	operation, ok := params.String("operation")
+	if ok && operation != "" {
+		paramBuilder.EmitPushByteArray([]byte(operation))
+	}
+
+	script, ok := params.String("hex")
+	if !ok {
+		return ResponsePack(InvalidParams, "")
+	}
+	codeHashBytes, err := HexStringToBytes(script)
+	if err != nil {
+		return ResponsePack(InvalidParams, "")
+	}
+	codeHash, err := Uint168FromBytes(codeHashBytes)
+	if err != nil {
+		codeHash = &Uint168{}
+	}
+	codeHashBytes = common.UInt168ToUInt160(codeHash)
+	paramBuilder.EmitPushCall(codeHashBytes)
+	engine := RunScript(paramBuilder.Bytes())
+	var ret map[string]interface{}
+	ret = make(map[string]interface{})
+	ret["state"] = engine.GetState()
+	ret["gas_consumed"] = engine.GetGasConsumed()
+	res := BytesToHexString(vm.PopByteArray(engine))
+	ret["result"] = res
+	return ResponsePack(Success, ret)
+}
+
+func paraseJsonToBytes(data[]interface{}, builder *vm.ParamsBuilder) error {
+
+	for i := len(data) - 1; i >= 0; i -- {
+		item := data[i].(map[string]interface{})
+		value := item["value"]
+		if item["type"] == "Boolean" {
+			builder.EmitPushBool(value.(bool))
+		} else if item["type"] == "Integer" {
+			value := value.(float64)
+			builder.EmitPushInteger(int64(value))
+		} else if item["type"] == "String" {
+			builder.EmitPushByteArray([]byte(value.(string)))
+		} else if item["type"] == "ByteArray" || item["type"] == "Hash256" || item["type"] == "Hash168" {
+			paramBytes, err := HexStringToBytes(value.(string))
+			if err != nil {
+				return errors.New(fmt.Sprint("Invalid param \"", item["type"], "\": ", value))
+			}
+			builder.EmitPushByteArray(paramBytes)
+		} else if item["type"] == "Hash160" {
+			paramBytes, err := HexStringToBytes(value.(string))
+			if err != nil {
+				return errors.New(fmt.Sprint("Invalid param \"", item["type"], "\": ", value))
+			}
+			if len(paramBytes) == 21 {
+				temp := make([]byte, 20)
+				copy(temp, paramBytes[1 :])
+				paramBytes = temp
+			}
+			builder.EmitPushByteArray(paramBytes)
+		} else if item["type"] == "Array" {
+			count := len(value.([]interface{}))
+			paraseJsonToBytes(value.([]interface{}),builder)
+			builder.EmitPushInteger(int64(count))
+			builder.Emit(vm.PACK)
+		}
+	}
+	return nil
 }
 
 func GetConnectionCount(param Params) map[string]interface{} {
