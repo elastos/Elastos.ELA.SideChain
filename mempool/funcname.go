@@ -19,6 +19,7 @@ var (
 		CheckTransactionUTXOLock:                "checktransactionutxolock",
 		CheckTransactionBalance:                 "checktransactionbalance",
 		CheckReferencedOutput:                   "checkreferencedoutput",
+		CheckRegisterAssetTx:                    "checkregisterassettx",
 	}
 )
 
@@ -38,4 +39,5 @@ type funcNames struct {
 	CheckTransactionUTXOLock                FuncName
 	CheckTransactionBalance                 FuncName
 	CheckReferencedOutput                   FuncName
+	CheckRegisterAssetTx                    FuncName
 }
