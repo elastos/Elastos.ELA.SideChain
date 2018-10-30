@@ -2,6 +2,7 @@ package core
 
 import (
 	"io"
+	"bytes"
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
 )
@@ -14,7 +15,12 @@ type PayloadInvoke struct {
 }
 
 func (ic *PayloadInvoke) Data(version byte) []byte{
-	return []byte{0}
+	buf := new(bytes.Buffer)
+	err := ic.Serialize(buf, version)
+	if err != nil {
+		return []byte{0}
+	}
+	return buf.Bytes()
 }
 
 func (ic *PayloadInvoke) Serialize(w io.Writer, version byte) error {

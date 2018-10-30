@@ -2,6 +2,7 @@ package core
 
 import (
 	"io"
+	"bytes"
 
 	"github.com/elastos/Elastos.ELA.SideChain/contract"
 
@@ -20,8 +21,12 @@ type PayloadDeploy struct {
 }
 
 func (dc *PayloadDeploy) Data(version byte) []byte  {
-	//TODO: implement PayloadDeploy.Data()
-	return []byte{0}
+	buf := new(bytes.Buffer)
+	err := dc.Serialize(buf, version)
+	if err != nil {
+		return []byte{0}
+	}
+	return buf.Bytes()
 }
 
 func (dc *PayloadDeploy) Serialize(w io.Writer, version byte) error {
