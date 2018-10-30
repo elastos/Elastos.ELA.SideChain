@@ -10,7 +10,6 @@ import (
 
 type PayloadDeploy struct {
 	Code        *contract.FunctionCode
-	Params      []byte
 	Name        string
 	CodeVersion string
 	Author      string
@@ -27,11 +26,6 @@ func (dc *PayloadDeploy) Data(version byte) []byte  {
 
 func (dc *PayloadDeploy) Serialize(w io.Writer, version byte) error {
 	err := dc.Code.Serialize(w)
-	if err != nil {
-		return err
-	}
-
-	err = common.WriteVarBytes(w, dc.Params)
 	if err != nil {
 		return err
 	}
@@ -77,11 +71,6 @@ func (dc *PayloadDeploy) Serialize(w io.Writer, version byte) error {
 func (dc *PayloadDeploy) Deserialize(r io.Reader, version byte) error {
 	dc.Code = new (contract.FunctionCode)
 	err := dc.Code.Deserialize(r)
-	if err != nil {
-		return err
-	}
-
-	dc.Params, err = common.ReadVarBytes(r)
 	if err != nil {
 		return err
 	}
