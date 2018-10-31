@@ -495,7 +495,11 @@ func InvokeScript(param Params) map[string]interface{} {
 	ret = make(map[string]interface{})
 	ret["state"] = engine.GetState()
 	ret["gas_consumed"] = engine.GetGasConsumed()
-	ret["result"] = BytesToHexString(vm.PopByteArray(engine))
+	if engine.GetEvaluationStack().Count() > 0 {
+		//ret["result"] = BytesToHexString(vm.PopByteArray(engine))
+		ret["result"] = (vm.PopInt(engine))
+	}
+
 	return ResponsePack(Success, ret)
 }
 
