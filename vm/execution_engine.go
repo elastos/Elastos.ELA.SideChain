@@ -49,7 +49,7 @@ func NewExecutionEngine(container interfaces.IDataContainer, crypto interfaces.I
 	}
 
 	engine.trigger = trigger
-	engine.gas = gas.IntValue() * 100000000 + gasFree
+	engine.gas = gas.IntValue()  + gasFree
 	engine.gasConsumed = 0
 	return &engine
 }
