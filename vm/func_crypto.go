@@ -48,7 +48,7 @@ func opCheckMultiSig(e *ExecutionEngine) (VMState, error) {
 		return FAULT, errors.New("invalid element count")
 	}
 	e.opCount += n
-	if e.opCount > e.maxSteps {
+	if e.opCount > e.maxSteps && e.maxSteps > 0 {
 		return FAULT, errors.New("too many OP code")
 	}
 
@@ -68,9 +68,9 @@ func opCheckMultiSig(e *ExecutionEngine) (VMState, error) {
 		return FAULT, errors.New("too many signatures in stack")
 	}
 
-	signatures := make([][]byte, 0, n)
-	for e.evaluationStack.Count() > 0 {
-		signatures = append(signatures, AssertStackItem(e.evaluationStack.Pop()).GetByteArray())
+	signatures := make([][]byte, m)
+	for i := 0; i < m; i++ {
+		signatures[i] = PopByteArray(e)
 	}
 
 	data := e.dataContainer.GetData()
