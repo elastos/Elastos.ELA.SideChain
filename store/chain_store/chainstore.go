@@ -419,17 +419,20 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 		Trigger:      vm.Application,
 	})
 	if err != nil {
+		log.Error(err.Error(), tx.Hash())
 		httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), DEPLOY_TRANSACTION, err)
 		return err
 	}
 
 	ret, err := smartcontract.DeployContract(payloadDeploy)
 	if err != nil {
+		log.Error(err.Error(), tx.Hash())
 		httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), DEPLOY_TRANSACTION, err)
 		return err
 	}
 	hash, err := crypto.ToProgramHash(ret)
 	if err != nil {
+		log.Error(err.Error(), tx.Hash())
 		httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), DEPLOY_TRANSACTION, err)
 		return err
 	}
@@ -448,7 +451,7 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 	})
 
 	httpwebsocket.PushResult(tx.Hash(), int64(Success), DEPLOY_TRANSACTION, BytesToHexString(hash.Bytes()))
-
+	log.Info("deploy contract suc:", string(data))
 	dbCache.Commit()
 	return nil
 }
@@ -459,11 +462,13 @@ func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCach
 	if !payloadInvoke.CodeHash.IsEqual(Uint168{}) {
 		contract, err := c.GetContract(payloadInvoke.CodeHash)
 		if err != nil {
+			log.Error(err.Error(), payloadInvoke.CodeHash)
 			httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), INVOKE_TRANSACTION, err)
 			return err
 		}
 		state, err := states.GetStateValue(ST_Contract, contract)
 		if err != nil {
+			log.Error(err.Error(), payloadInvoke.CodeHash)
 			httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), INVOKE_TRANSACTION, err)
 			return err
 		}
@@ -489,6 +494,7 @@ func (c *ChainStore) PersistInvokeTx(b *core.Block, tx *core.Transaction, dbCach
 		Trigger:      	vm.Application,
 	})
 	if err != nil {
+		log.Error(err.Error(), tx.Hash())
 		httpwebsocket.PushResult(tx.Hash(), int64(SmartCodeError), INVOKE_TRANSACTION, err)
 	}
 
