@@ -384,6 +384,12 @@ func (s *StateMachine) StorageFind(engine *vm.ExecutionEngine) bool {
 }
 
 func (s *StateMachine) GetStorageContext(engine *vm.ExecutionEngine) bool {
+	data  := engine.CurrentContext().GetCodeHash()
+	codeHash, err := common.Uint168FromBytes(data)
+	if err != nil {
+		return false
+	}
+	vm.PushData(engine, NewStorageContext(codeHash))
 	return true
 }
 

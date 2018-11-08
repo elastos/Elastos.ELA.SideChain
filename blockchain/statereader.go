@@ -46,6 +46,7 @@ func NewStateReader() *StateReader {
 	stateReader.Register("Neo.Blockchain.GetTransaction", stateReader.BlockChainGetTransaction)
 	stateReader.Register("Neo.Blockchain.GetTransactionHeight", stateReader.BlockchainGetTransactionHeight)
 	stateReader.Register("Neo.Blockchain.GetAccount", stateReader.BlockChainGetAccount)
+	stateReader.Register("Neo.Blockchain.GetValidators", stateReader.BlockChainGetValidators)
 	stateReader.Register("Neo.Blockchain.GetAsset", stateReader.BlockChainGetAsset)
 
 	stateReader.Register("Neo.Header.GetIndex", stateReader.HeaderGetHeight);
@@ -55,6 +56,7 @@ func NewStateReader() *StateReader {
 	stateReader.Register("Neo.Header.GetMerkleRoot", stateReader.HeaderGetMerkleRoot)
 	stateReader.Register("Neo.Header.GetTimestamp", stateReader.HeaderGetTimestamp)
 	stateReader.Register("Neo.Header.GetConsensusData", stateReader.HeaderGetConsensusData)
+	stateReader.Register("Neo.Header.GetNextConsensus", stateReader.HeaderGetNextConsensus)
 
 	stateReader.Register("Neo.Block.GetTransactionCount", stateReader.BlockgetTransactionCount)
 	stateReader.Register("Neo.Block.GetTransactions", stateReader.BlockGetTransactions)
@@ -81,6 +83,7 @@ func NewStateReader() *StateReader {
 
 	stateReader.Register("Neo.Account.GetScriptHash", stateReader.AccountGetCodeHash)
 	stateReader.Register("Neo.Account.GetBalance", stateReader.AccountGetBalance)
+	stateReader.Register("Neo.Account.GetVotes", stateReader.AccountGetVotes)
 
 	stateReader.Register("Neo.Asset.GetAssetId", stateReader.AssetGetAssetId)
 	stateReader.Register("Neo.Asset.GetAssetType", stateReader.AssetGetAssetType)
@@ -92,6 +95,7 @@ func NewStateReader() *StateReader {
 	stateReader.Register("Neo.Asset.GetIssuer", stateReader.AssetGetIssuer)
 
 	stateReader.Register("Neo.Contract.GetScript", stateReader.ContractGetCode)
+	stateReader.Register("Neo.Contract.IsPayable", stateReader.ContractIsPayable)
 
 	stateReader.Register("Neo.Storage.GetContext", stateReader.StorageGetContext)
 	stateReader.Register("Neo.Storage.GetReadOnlyContext", stateReader.StorageGetReadOnlyContext)
@@ -456,6 +460,14 @@ func (s *StateReader) BlockChainGetAccount(e *vm.ExecutionEngine) bool {
 	return true
 }
 
+func (s *StateReader) BlockChainGetValidators(e *vm.ExecutionEngine) bool {
+	//note ela chain is not have NextConsensus data. because consensus is pow
+	pkList := make([]types.StackItem, 0)
+	vm.PushData(e, pkList)
+	return true
+}
+
+
 func (s *StateReader) BlockChainGetAsset(e *vm.ExecutionEngine) bool {
 	d := vm.PopByteArray(e)
 	hash, err := common.Uint256FromBytes(d)
@@ -537,6 +549,16 @@ func (s *StateReader) HeaderGetConsensusData(e *vm.ExecutionEngine) bool {
 	}
 	consensusData := d.(*core.Header).Nonce
 	vm.PushData(e, consensusData)
+	return true
+}
+
+func (s *StateReader) HeaderGetNextConsensus(e *vm.ExecutionEngine) bool {
+	d := vm.PopInteropInterface(e)
+	if d == nil {
+		return false
+	}
+	//note ela chain is not have NextConsensus data. because consensus is pow
+	vm.PushData(e, 0)
 	return true
 }
 
@@ -778,7 +800,6 @@ func (s *StateReader) AccountGetCodeHash(e *vm.ExecutionEngine) bool {
 }
 
 func (s *StateReader) AccountGetBalance(e *vm.ExecutionEngine) bool {
-
 	d := vm.PopInteropInterface(e)
 	if d == nil {
 		log.Info("Get AccountState error in function AccountGetCodeHash")
@@ -801,6 +822,23 @@ func (s *StateReader) AccountGetBalance(e *vm.ExecutionEngine) bool {
 		balance = v
 	}
 	vm.PushData(e, balance.IntValue())
+	return true
+}
+
+func (s *StateReader) AccountGetVotes(e *vm.ExecutionEngine) bool {
+	d := vm.PopInteropInterface(e)
+	if d == nil {
+		log.Info("Get AccountState error in function AccountGetCodeHash")
+		return false
+	}
+	accountState := d.(*states.AccountState)
+	if accountState == nil {
+		log.Info("Get AccountState error in function AccountGetCodeHash")
+		return false
+	}
+	//note ela chain is not have NextConsensus data. because consensus is pow
+	pkList := make([]types.StackItem, 0)
+	vm.PushData(e, pkList)
 	return true
 }
 
@@ -894,7 +932,23 @@ func (s *StateReader) ContractGetCode(e *vm.ExecutionEngine) bool {
 		return false
 	}
 	assetState := d.(*states.ContractState)
+	if assetState == nil {
+		return false
+	}
 	vm.PushData(e, assetState.Code.Code)
+	return true
+}
+
+func (s *StateReader) ContractIsPayable(e *vm.ExecutionEngine) bool {
+	d := vm.PopInteropInterface(e)
+	if d == nil {
+		return false
+	}
+	assetState := d.(*states.ContractState)
+	if assetState == nil {
+		return false
+	}
+	vm.PushData(e, true)
 	return true
 }
 

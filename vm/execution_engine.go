@@ -121,6 +121,14 @@ func (e *ExecutionEngine) CallingScript() []byte {
 	return nil
 }
 
+func (e *ExecutionEngine) CurrentContext() *ExecutionContext {
+	context := AssertExecutionContext(e.invocationStack.Peek(0))
+	if context != nil {
+		return context
+	}
+	return nil
+}
+
 
 func (e *ExecutionEngine) Create(caller common.Uint168, code []byte) ([]byte, error) {
 	return code, nil
