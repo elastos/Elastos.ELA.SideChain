@@ -143,7 +143,7 @@ func (e *ExecutionEngine) Call(caller common.Uint168, codeHash common.Uint168, i
 	return nil, nil
 }
 
-func (e *ExecutionEngine) Hash160(script []byte) []byte {
+func (e *ExecutionEngine) Hash168(script []byte) []byte {
 	return e.crypto.Hash168(script)
 }
 

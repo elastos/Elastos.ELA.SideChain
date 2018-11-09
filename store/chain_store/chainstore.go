@@ -451,7 +451,7 @@ func (c *ChainStore) PersistDeployTx(b *core.Block, tx *core.Transaction, dbCach
 	})
 
 	httpwebsocket.PushResult(tx.Hash(), int64(Success), DEPLOY_TRANSACTION, BytesToHexString(hash.Bytes()))
-	log.Info("deploy contract suc:", string(data))
+	log.Info("deploy contract suc:", BytesToHexString(data))
 	dbCache.Commit()
 	return nil
 }

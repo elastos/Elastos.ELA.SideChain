@@ -8,17 +8,18 @@ import (
 	"fmt"
 	"time"
 
-	chain "github.com/elastos/Elastos.ELA.SideChain/blockchain"
+	. "github.com/elastos/Elastos.ELA.Utility/common"
+
 	"github.com/elastos/Elastos.ELA.SideChain/config"
-	. "github.com/elastos/Elastos.ELA.SideChain/core"
-	. "github.com/elastos/Elastos.ELA.SideChain/errors"
 	"github.com/elastos/Elastos.ELA.SideChain/log"
 	"github.com/elastos/Elastos.ELA.SideChain/pow"
-	. "github.com/elastos/Elastos.ELA.SideChain/protocol"
-
-	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.SideChain/vm"
 	"github.com/elastos/Elastos.ELA.SideChain/common"
+	"github.com/elastos/Elastos.ELA.SideChain/vm/types"
+	chain "github.com/elastos/Elastos.ELA.SideChain/blockchain"
+	. "github.com/elastos/Elastos.ELA.SideChain/protocol"
+	. "github.com/elastos/Elastos.ELA.SideChain/core"
+	. "github.com/elastos/Elastos.ELA.SideChain/errors"
 )
 
 const (
@@ -496,8 +497,7 @@ func InvokeScript(param Params) map[string]interface{} {
 	ret["state"] = engine.GetState()
 	ret["gas_consumed"] = engine.GetGasConsumed()
 	if engine.GetEvaluationStack().Count() > 0 {
-		ret["result"] = BytesToHexString(vm.PopByteArray(engine))
-		//ret["result"] = (vm.PopInt(engine))
+		ret["result"] = getResult(vm.PopStackItem(engine))
 	}
 
 	return ResponsePack(Success, ret)
@@ -537,9 +537,30 @@ func InvokeFunction(params Params) map[string]interface{} {
 	ret = make(map[string]interface{})
 	ret["state"] = engine.GetState()
 	ret["gas_consumed"] = engine.GetGasConsumed()
-	res := BytesToHexString(vm.PopByteArray(engine))
-	ret["result"] = res
+	if engine.GetEvaluationStack().Count() > 0 {
+		ret["result"] = getResult(vm.PopStackItem(engine))
+	}
 	return ResponsePack(Success, ret)
+}
+
+func getResult(item types.StackItem) interface{} {
+	switch item.(type) {
+	case *types.Boolean:
+		return item.GetBoolean()
+	case *types.Integer:
+		return item.GetBigInteger()
+	case *types.ByteArray:
+		return BytesToHexString(item.GetByteArray())
+	case *types.GeneralInterface:
+		interop := item.GetInterface()
+		return string(interop.Bytes())
+	case *types.Array:
+		items := item.GetArray();
+		for i := 0; i < len(items); i++ {
+			return getResult(items[i])
+		}
+	}
+	return ""
 }
 
 func paraseJsonToBytes(data[]interface{}, builder *vm.ParamsBuilder) error {

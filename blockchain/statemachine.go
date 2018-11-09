@@ -40,6 +40,7 @@ func NewStateMachine(dbCache storage.DBCache, innerCache storage.DBCache) *State
 	stateMachine.StateReader.Register("Neo.Storage.Delete", stateMachine.StorageDelete)
 	stateMachine.StateReader.Register("Neo.Storage.Find", stateMachine.StorageFind);
 	stateMachine.StateReader.Register("Neo.Contract.GetStorageContext", stateMachine.GetStorageContext)
+	stateMachine.StateReader.Register("Neo.Account.IsStandard", stateMachine.AccountIsStandard)
 
 	return &stateMachine
 }
@@ -178,7 +179,7 @@ func (s *StateMachine) GetContract(engine *vm.ExecutionEngine) bool {
 
 func (s *StateMachine) ContractMigrate(engine *vm.ExecutionEngine) bool {
 	codeByte := vm.PopByteArray(engine)
-	if codeByte[len(codeByte) - 1] != common.SMARTCONTRACT {
+	if codeByte[len(codeByte)-1] != common.SMARTCONTRACT {
 		codeByte = append(codeByte, common.SMARTCONTRACT)
 	}
 	if (len(codeByte) > int(vm.MaxItemSize)) {
@@ -247,7 +248,7 @@ func (s *StateMachine) ContractMigrate(engine *vm.ExecutionEngine) bool {
 			for datas.Next() {
 				key := datas.Key()
 				value := datas.Value()
-				reader := bytes.NewReader(key[1 : len(key)])
+				reader := bytes.NewReader(key[1:len(key)])
 				storageKey.Deserialize(reader)
 				storageKey.CodeHash = &codeHash
 				s.CloneCache.GetInnerCache().GetWriteSet().Add(store.ST_Storage, storage.KeyToStr(storageKey), states.NewStorageItem(value))
@@ -324,7 +325,7 @@ func (s *StateMachine) StorageGet(engine *vm.ExecutionEngine) bool {
 	if err != nil && err.Error() != "leveldb: not found" {
 		return false
 	}
-	if item ==  nil {
+	if item == nil {
 		vm.PushData(engine, []byte{})
 	} else {
 		vm.PushData(engine, item.(*states.StorageItem).Value)
@@ -384,12 +385,37 @@ func (s *StateMachine) StorageFind(engine *vm.ExecutionEngine) bool {
 }
 
 func (s *StateMachine) GetStorageContext(engine *vm.ExecutionEngine) bool {
-	data  := engine.CurrentContext().GetCodeHash()
+	data := engine.CurrentContext().GetCodeHash()
 	codeHash, err := common.Uint168FromBytes(data)
 	if err != nil {
 		return false
 	}
 	vm.PushData(engine, NewStorageContext(codeHash))
+	return true
+}
+
+func (s *StateMachine) AccountIsStandard(e *vm.ExecutionEngine) bool {
+
+	d := vm.PopByteArray(e)
+	hash, err := common.Uint168FromBytes(d)
+	if err != nil {
+		return false
+	}
+	keyStr := commonSide.UInt168ToUInt160(hash)
+	item, err := s.CloneCache.TryGet(store.ST_Contract, string(keyStr))
+	if err != nil {
+		return false
+	}
+	contractState := item.(*states.ContractState)
+	if contractState == nil {
+		return false
+	}
+	if commonSide.IsSignatureCotract(contractState.Code.Code) || commonSide.IsMultiSigContract(contractState.Code.Code) {
+		vm.PushData(e, true)
+	} else {
+		vm.PushData(e, false)
+	}
+
 	return true
 }
 
