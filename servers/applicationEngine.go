@@ -28,6 +28,7 @@ func RunScript(script []byte) *vm.ExecutionEngine {
 		stateMachine,
 		99999 * 100000000,
 		vm.Application,
+		true,
 	)
 	e.LoadScript(script, false)
 	e.Execute()

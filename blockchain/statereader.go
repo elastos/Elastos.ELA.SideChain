@@ -953,7 +953,7 @@ func (s *StateReader) ContractIsPayable(e *vm.ExecutionEngine) bool {
 }
 
 func (s *StateReader) StorageGetContext(e *vm.ExecutionEngine) bool {
-	codeHash, err := common.Uint168FromBytes(e.Hash160(e.ExecutingScript()))
+	codeHash, err := common.Uint168FromBytes(e.Hash168(e.ExecutingScript()))
 	if err != nil {
 		return false
 	}
@@ -963,7 +963,7 @@ func (s *StateReader) StorageGetContext(e *vm.ExecutionEngine) bool {
 
 func (s *StateReader) StorageGetReadOnlyContext(e *vm.ExecutionEngine) bool {
 
-	codeHash, err := common.Uint168FromBytes(e.Hash160(e.ExecutingScript()))
+	codeHash, err := common.Uint168FromBytes(e.Hash168(e.ExecutingScript()))
 	if err != nil {
 		return false
 	}

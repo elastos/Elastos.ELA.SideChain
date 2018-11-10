@@ -58,6 +58,7 @@ func NewSmartContract(context *Context) (*SmartContract, error) {
 		context.StateMachine,
 		context.Gas,
 		context.Trigger,
+		false,
 	)
 
 	return &SmartContract{

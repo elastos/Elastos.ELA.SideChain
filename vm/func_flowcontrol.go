@@ -5,6 +5,7 @@ import (
 
 	"github.com/elastos/Elastos.ELA.SideChain/vm/errors"
 	"github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.SideChain/log"
 )
 
 func opNop(e *ExecutionEngine) (VMState, error) {
@@ -122,6 +123,7 @@ func opCallE(e *ExecutionEngine) (VMState, error) {
 
 	script := e.table.GetScript(script_hash)
 	if script == nil {
+		log.Error("can't find contract by hash:" , common.BytesToHexString(script_hash))
 		return FAULT ,err
 	}
 	if (e.opCode == CALL_ET || e.opCode == CALL_EDT) {
