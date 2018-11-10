@@ -503,6 +503,44 @@ func InvokeScript(param Params) map[string]interface{} {
 	return ResponsePack(Success, ret)
 }
 
+func ListUnspent(params Params) map[string]interface{} {
+	bestHeight := chain.DefaultLedger.Blockchain.GetBestHeight()
+	var result []UTXOInfo
+	addresses, ok := params.ArrayString("addresses")
+	if !ok {
+		return ResponsePack(InvalidParams, "need addresses in an array!")
+	}
+	for _, address := range addresses {
+		programHash, err := Uint168FromAddress(address)
+		if err != nil {
+			return ResponsePack(InvalidParams, "Invalid address: "+address)
+		}
+		unspends, err := chain.DefaultLedger.Store.GetUnspentsFromProgramHash(*programHash)
+		if err != nil {
+			return ResponsePack(InvalidParams, "cannot get asset with program")
+		}
+
+		unspents := unspends[chain.DefaultLedger.Blockchain.AssetID]
+		for _, unspent := range unspents {
+			_, height, err := chain.DefaultLedger.Store.GetTransaction(unspent.TxId)
+			if err != nil {
+				return ResponsePack(InternalError,
+					"unknown transaction "+unspent.TxId.String()+" from persisted utxo")
+			}
+
+			result = append(result, UTXOInfo{
+				AssetId:       ToReversedString(chain.DefaultLedger.Blockchain.AssetID),
+				Txid:          ToReversedString(unspent.TxId),
+				VOut:          unspent.Index,
+				Amount:        unspent.Value.String(),
+				Address:       address,
+				Confirmations: bestHeight - height + 1,
+			})
+		}
+	}
+	return ResponsePack(Success, result)
+}
+
 func InvokeFunction(params Params) map[string]interface{} {
 	buffer := new(bytes.Buffer)
 	paramBuilder := vm.NewParamsBuider(buffer)
@@ -563,7 +601,7 @@ func getResult(item types.StackItem) interface{} {
 	return ""
 }
 
-func paraseJsonToBytes(data[]interface{}, builder *vm.ParamsBuilder) error {
+func paraseJsonToBytes(data []interface{}, builder *vm.ParamsBuilder) error {
 
 	for i := len(data) - 1; i >= 0; i -- {
 		item := data[i].(map[string]interface{})
@@ -588,13 +626,13 @@ func paraseJsonToBytes(data[]interface{}, builder *vm.ParamsBuilder) error {
 			}
 			if len(paramBytes) == 21 {
 				temp := make([]byte, 20)
-				copy(temp, paramBytes[1 :])
+				copy(temp, paramBytes[1:])
 				paramBytes = temp
 			}
 			builder.EmitPushByteArray(paramBytes)
 		} else if item["type"] == "Array" {
 			count := len(value.([]interface{}))
-			paraseJsonToBytes(value.([]interface{}),builder)
+			paraseJsonToBytes(value.([]interface{}), builder)
 			builder.EmitPushInteger(int64(count))
 			builder.Emit(vm.PACK)
 		}

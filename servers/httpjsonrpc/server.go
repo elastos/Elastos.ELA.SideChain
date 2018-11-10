@@ -57,6 +57,7 @@ func StartRPCServer() {
 	mainMux["discretemining"] = DiscreteMining
 	mainMux["invokescript"] = InvokeScript
 	mainMux["invokefunction"] = InvokeFunction
+	mainMux["listunspent"] = ListUnspent
 
 	err := http.ListenAndServe(":"+strconv.Itoa(Parameters.HttpJsonPort), nil)
 	if err != nil {

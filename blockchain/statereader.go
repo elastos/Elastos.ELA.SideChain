@@ -461,7 +461,7 @@ func (s *StateReader) BlockChainGetAccount(e *vm.ExecutionEngine) bool {
 }
 
 func (s *StateReader) BlockChainGetValidators(e *vm.ExecutionEngine) bool {
-	//note ela chain is not have NextConsensus data. because consensus is pow
+	//note ela chain is not have Validators data. because consensus is pow
 	pkList := make([]types.StackItem, 0)
 	vm.PushData(e, pkList)
 	return true
@@ -487,8 +487,18 @@ func (s *StateReader) HeaderGetHeight(e *vm.ExecutionEngine) bool {
 	if d == nil {
 		return false
 	}
-	index := d.(*core.Header).Height
-	vm.PushData(e, index)
+
+	var height uint32
+	switch d.(type) {
+	case *core.Header:
+		height = d.(*core.Header).Height
+	case *core.Block:
+		height = d.(*core.Block).Header.Height
+	default:
+		return false
+	}
+
+	vm.PushData(e, height)
 	return true
 }
 
@@ -497,7 +507,15 @@ func (s *StateReader) HeaderGetHash(e *vm.ExecutionEngine) bool {
 	if d == nil {
 		return false
 	}
-	hash := d.(*core.Header).Hash()
+	var hash common.Uint256
+	switch d.(type) {
+	case *core.Header:
+		hash = d.(*core.Header).Hash()
+	case *core.Block:
+		hash = d.(*core.Block).Header.Hash()
+	default:
+		return false
+	}
 	vm.PushData(e, hash.Bytes())
 	return true
 }
@@ -507,7 +525,16 @@ func (s *StateReader) HeaderGetVersion(e *vm.ExecutionEngine) bool {
 	if d == nil {
 		return false
 	}
-	version := d.(*core.Header).Version
+	var version uint32
+	switch d.(type) {
+	case *core.Header:
+		version = d.(*core.Header).Version
+	case *core.Block:
+		version = d.(*core.Block).Header.Version
+	default:
+		return false
+	}
+
 	vm.PushData(e, version)
 	return true
 }
@@ -517,7 +544,17 @@ func (s *StateReader) HeaderGetPrevHash(e *vm.ExecutionEngine) bool {
 	if d == nil {
 		return false
 	}
-	preHash := d.(*core.Header).Previous
+
+	var preHash common.Uint256
+	switch d.(type) {
+	case *core.Header:
+		preHash = d.(*core.Header).Previous
+	case *core.Block:
+		preHash = d.(*core.Block).Header.Previous
+	default:
+		return false
+	}
+
 	vm.PushData(e, preHash.Bytes())
 	return true
 }
@@ -527,7 +564,17 @@ func (s *StateReader) HeaderGetMerkleRoot(e *vm.ExecutionEngine) bool {
 	if d == nil {
 		return false
 	}
-	root := d.(*core.Header).MerkleRoot
+
+	var root common.Uint256
+	switch d.(type) {
+	case *core.Header:
+		root = d.(*core.Header).MerkleRoot
+	case *core.Block:
+		root = d.(*core.Block).Header.MerkleRoot
+	default:
+		return false
+	}
+
 	vm.PushData(e, root.Bytes())
 	return true
 }
@@ -537,7 +584,17 @@ func (s *StateReader) HeaderGetTimestamp(e *vm.ExecutionEngine) bool {
 	if d == nil {
 		return false
 	}
-	timeStamp := d.(*core.Header).Timestamp
+
+	var timeStamp uint32
+	switch d.(type) {
+	case *core.Header:
+		timeStamp = d.(*core.Header).Timestamp
+	case *core.Block:
+		timeStamp = d.(*core.Block).Header.Timestamp
+	default:
+		return false
+	}
+
 	vm.PushData(e, timeStamp)
 	return true
 }
@@ -547,7 +604,17 @@ func (s *StateReader) HeaderGetConsensusData(e *vm.ExecutionEngine) bool {
 	if d == nil {
 		return false
 	}
-	consensusData := d.(*core.Header).Nonce
+
+	var consensusData uint32
+	switch d.(type) {
+	case *core.Header:
+		consensusData = d.(*core.Header).Nonce
+	case *core.Block:
+		consensusData = d.(*core.Block).Header.Nonce
+	default:
+		return false
+	}
+
 	vm.PushData(e, consensusData)
 	return true
 }
@@ -836,7 +903,7 @@ func (s *StateReader) AccountGetVotes(e *vm.ExecutionEngine) bool {
 		log.Info("Get AccountState error in function AccountGetCodeHash")
 		return false
 	}
-	//note ela chain is not have NextConsensus data. because consensus is pow
+	//note ela chain is not have votes data. because consensus is pow
 	pkList := make([]types.StackItem, 0)
 	vm.PushData(e, pkList)
 	return true
