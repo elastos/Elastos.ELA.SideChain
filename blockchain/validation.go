@@ -64,7 +64,7 @@ func RunPrograms(tx *core.Transaction, hashes []Uint168, programs []*core.Progra
 		}
 		dbCache := NewDBCache(DefaultLedger.Store)
 		stateMachine := NewStateMachine(dbCache, dbCache)
-		se := vm.NewExecutionEngine(tx.GetDataContainer(programHash), new(vm.CryptoECDsa), vm.MAXSTEPS, nil, stateMachine, 0, vm.Verification)
+		se := vm.NewExecutionEngine(tx.GetDataContainer(programHash), new(vm.CryptoECDsa), vm.MAXSTEPS, nil, stateMachine, 0, vm.Verification, false)
 		signType := programs[i].Code[len(programs[i].Code) - 1]
 		var script []byte
 		if signType == SMARTCONTRACT {

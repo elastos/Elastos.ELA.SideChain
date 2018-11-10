@@ -182,7 +182,7 @@ func (s *StateMachine) ContractMigrate(engine *vm.ExecutionEngine) bool {
 	if codeByte[len(codeByte)-1] != common.SMARTCONTRACT {
 		codeByte = append(codeByte, common.SMARTCONTRACT)
 	}
-	if (len(codeByte) > int(vm.MaxItemSize)) {
+	if len(codeByte) > int(vm.MaxItemSize) {
 		return false
 	}
 	parameters := vm.PopByteArray(engine)
@@ -233,7 +233,10 @@ func (s *StateMachine) ContractMigrate(engine *vm.ExecutionEngine) bool {
 			Email:       common.BytesToHexString(emailByte),
 			Description: common.BytesToHexString(descByte),
 		}
-		s.CloneCache.GetInnerCache().GetOrAdd(store.ST_Contract, string(keyStr), item)
+		if !engine.IsTestMode() {
+			s.CloneCache.GetInnerCache().GetOrAdd(store.ST_Contract, string(keyStr), item)
+		}
+
 		if needStorage {
 			data := engine.ExecutingScript()
 			if data == nil {
@@ -294,7 +297,10 @@ func (s *StateMachine) ContractDestory(engine *vm.ExecutionEngine) bool {
 		fmt.Println(err)
 		return false
 	}
-	s.CloneCache.TryDelete(store.ST_Contract, *hash)
+	if !engine.IsTestMode() {
+		s.CloneCache.GetInnerCache().TryDelete(store.ST_Contract, keyStr)
+	}
+
 	return true
 }
 
