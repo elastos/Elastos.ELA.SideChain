@@ -31,8 +31,8 @@ const (
 )
 
 func NewExecutionEngine(container interfaces.IDataContainer, crypto interfaces.ICrypto, maxSteps int,
-						table interfaces.IScriptTable, service IGeneralService, gas common.Fixed64, trigger TriggerType,
-						testMode bool) *ExecutionEngine {
+	table interfaces.IScriptTable, service IGeneralService, gas common.Fixed64, trigger TriggerType,
+	testMode bool) *ExecutionEngine {
 	var engine ExecutionEngine
 
 	engine.crypto = crypto
@@ -84,8 +84,8 @@ type ExecutionEngine struct {
 	opCode      OpCode
 	gas         int64
 	gasConsumed int64
-	trigger TriggerType
-	testMode bool
+	trigger     TriggerType
+	testMode    bool
 }
 
 func (e *ExecutionEngine) IsTestMode() bool {
