@@ -81,7 +81,7 @@ func RunPrograms(tx *core.Transaction, hashes []Uint168, programs []*core.Progra
 			return errors.New("[VM] Finish State not equal to HALT.")
 		}
 
-		if se.GetEvaluationStack().Count() != 1 {
+		if se.GetEvaluationStack().Count() != 1 && signType != SMARTCONTRACT {
 			return errors.New("[VM] Execute Engine Stack Count Error.")
 		}
 

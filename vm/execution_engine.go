@@ -11,17 +11,23 @@ import (
 
 	"github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.SideChain/log"
+	"encoding/binary"
+	"github.com/elastos/Elastos.ELA.SideChain/vm/types"
+	"math"
+	"math/big"
 )
 
 const (
-	 MAXSTEPS = -1
-	ratio = 100000
-	gasFree = 10 * 100000000;
+	MAXSTEPS = -1
+	ratio    = 100000
+	gasFree  = 10 * 100000000;
+	StackLimit             uint32 = 2 * 1024
+	MaxItemSize            uint32 = 1024 * 1024
+	MaxArraySize           uint32 = 1024
+	MAXInvocationStackSize        = 1024
+	MAX_SHL_SHR = math.MaxUint16
+	Min_SHL_SHR = -MAX_SHL_SHR
 
-	StackLimit       uint32 = 2 * 1024
-	MaxStackSize     uint32 = 1024
-	MaxItemSize      uint32 = 1024 * 1024
-	MaxArraySize     uint32 = 1024
 )
 
 func NewExecutionEngine(container interfaces.IDataContainer, crypto interfaces.ICrypto, maxSteps int,
@@ -50,7 +56,7 @@ func NewExecutionEngine(container interfaces.IDataContainer, crypto interfaces.I
 	}
 
 	engine.trigger = trigger
-	engine.gas = gas.IntValue()  + gasFree
+	engine.gas = gas.IntValue() + gasFree
 	engine.gasConsumed = 0
 	engine.testMode = testMode
 
@@ -75,8 +81,8 @@ type ExecutionEngine struct {
 	context *ExecutionContext
 
 	//current opcode
-	opCode OpCode
-	gas    int64
+	opCode      OpCode
+	gas         int64
 	gasConsumed int64
 	trigger TriggerType
 	testMode bool
@@ -137,7 +143,6 @@ func (e *ExecutionEngine) CurrentContext() *ExecutionContext {
 	return nil
 }
 
-
 func (e *ExecutionEngine) Create(caller common.Uint168, code []byte) ([]byte, error) {
 	return code, nil
 }
@@ -177,7 +182,7 @@ func (e *ExecutionEngine) Execute() error {
 		}
 		err := e.StepInto()
 		if err != nil {
-			log.Info("contract execute failed:",err)
+			log.Info("contract execute failed:", err)
 			return err
 		}
 	}
@@ -196,7 +201,7 @@ func (e *ExecutionEngine) StepInto() error {
 	if context.GetInstructionPointer() >= len(context.Script) {
 		opCode = RET
 	} else {
-		op, err :=  context.OpReader.ReadByte()
+		op, err := context.OpReader.ReadByte()
 		if err == io.EOF && opCode == 0 {
 			e.state = FAULT
 			return err
@@ -224,7 +229,9 @@ func (e *ExecutionEngine) ExecuteOp(opCode OpCode, context *ExecutionContext) (V
 	if opCode > PUSH16 && e.opCount > e.maxSteps && e.maxSteps > 0 {
 		return FAULT, nil
 	}
+
 	if opCode >= PUSHBYTES1 && opCode <= PUSHBYTES75 {
+
 		err := pushData(e, context.OpReader.ReadBytes(int(opCode)))
 		if err != nil {
 			return FAULT, err
@@ -237,6 +244,22 @@ func (e *ExecutionEngine) ExecuteOp(opCode OpCode, context *ExecutionContext) (V
 	if !e.checkStackSize() {
 		return FAULT, errors.ErrOverLimitStack
 	}
+
+	if !e.checkItemSize(opCode) {
+		return FAULT, nil
+	}
+
+	if !e.checkArraySize(opCode) {
+		return FAULT, nil
+	}
+
+	if !e.checkInvocationStack(opCode) {
+		return FAULT, nil
+	}
+	if !e.checkBigIntegers(opCode) {
+		return FAULT, nil
+	}
+
 	price := e.getPrice() * ratio
 	e.gasConsumed += price
 	if e.gas < e.gasConsumed {
@@ -253,6 +276,110 @@ func (e *ExecutionEngine) ExecuteOp(opCode OpCode, context *ExecutionContext) (V
 		return state, err
 	}
 	return NONE, nil
+}
+
+func (e *ExecutionEngine) checkItemSize(opcode OpCode) bool {
+	switch opcode {
+	case PUSHDATA4:
+		if e.CurrentContext().GetInstructionPointer()+4 >= len(e.CurrentContext().Script) {
+			return false
+		}
+		script := make([]byte, 4)
+		copy(script, e.CurrentContext().Script[e.CurrentContext().GetInstructionPointer():e.CurrentContext().GetInstructionPointer()+4])
+		length := binary.LittleEndian.Uint32(script[:])
+		if length > MaxItemSize {
+			return false
+		}
+	case CAT:
+		if e.evaluationStack.Count() < 2 {
+			return false
+		}
+		length := len(PeekNByteArray(0, e)) + len(PeekNByteArray(1, e))
+		if uint32(length) > MaxItemSize {
+			return false
+		}
+	}
+	return true
+}
+
+func (e *ExecutionEngine) checkArraySize(code OpCode) bool {
+	var size int64
+	switch code {
+	case PACK, NEWARRAY, NEWSTRUCT:
+		if e.evaluationStack.Count() == 0 {
+			return false
+		}
+		size = PeekBigInteger(e).Int64()
+	case SETITEM:
+		if e.evaluationStack.Count() < 3 {
+			return false
+		}
+		item := PeekNStackItem(2, e)
+		dic, ok := item.(*types.Dictionary)
+		if !ok {
+			return true
+		}
+		key := PeekN(1, e).(types.StackItem)
+		if dic.GetValue(key) != nil {
+			return true
+		}
+		size = int64(len(dic.GetMap()))
+	case APPEND:
+		if e.evaluationStack.Count() < 2 {
+			return false
+		}
+		item := PeekNStackItem(1, e)
+		array, ok := item.(*types.Array)
+		if !ok {
+			return false
+		}
+		size = int64(len(array.GetArray()) + 1)
+	default:
+		return true
+	}
+	return size <= int64(MaxArraySize)
+}
+
+func (e *ExecutionEngine) checkInvocationStack(code OpCode) bool {
+	switch code {
+	case CALL, APPCALL, CALL_I, CALL_E, CALL_ED:
+		if e.invocationStack.Count() >= MAXInvocationStackSize {
+			return false
+		}
+	}
+	return true
+}
+
+func (e *ExecutionEngine) checkBigIntegers(code OpCode) bool {
+	switch code {
+	case SHL:
+		ishift := PeekNBigInt(0, e).Int64()
+		if ishift > MAX_SHL_SHR || ishift < Min_SHL_SHR {
+			return false
+		}
+		x := PeekNBigInt(1, e).Uint64()
+		v := x << (uint64(ishift))
+		num := new(big.Int)
+		num.SetUint64(v)
+		if !checkBigInteger(num) {
+			return false
+		}
+	case SHR:
+		ishift := PeekNBigInt(0, e).Int64()
+		if ishift > MAX_SHL_SHR || ishift < Min_SHL_SHR {
+			return false
+		}
+		x := PeekNBigInt(1, e).Uint64()
+		v := x >> (uint64(ishift))
+		num := new(big.Int)
+		num.SetUint64(v)
+		if !checkBigInteger(num) {
+			return false
+		}
+	default:
+	}
+	return true
+
 }
 
 func (e *ExecutionEngine) StepOut() {
@@ -290,7 +417,6 @@ func (e *ExecutionEngine) RemoveBreakPoint(position uint) bool {
 	//b := e.context.BreakPoints
 	return true
 }
-
 
 func (e *ExecutionEngine) checkStackSize() bool {
 	size := 0
@@ -335,7 +461,8 @@ func (e *ExecutionEngine) getPrice() int64 {
 		return 100
 	case CHECKMULTISIG:
 		if e.evaluationStack.Count() == 0 {
-			return 1
+
+      return 1
 		}
 		n := PeekBigInteger(e).Int64()
 		if n < 1 {
@@ -351,14 +478,14 @@ func (e *ExecutionEngine) getPriceForSysCall() int64 {
 	context := e.context
 	i := context.GetInstructionPointer() - 1
 	c := len(context.Script)
-	if i >= c - 3 {
+	if i >= c-3 {
 		return 1
 	}
 	l := int(context.Script[i+1])
-	if i > c - l - 2 {
+	if i > c-l-2 {
 		return 1
 	}
-	name := string(context.Script[i+2: i + 2 + l])
+	name := string(context.Script[i+2 : i+2+l])
 	switch name {
 	case "Neo.Runtime.CheckWitness":
 		return 200
@@ -393,7 +520,7 @@ func (e *ExecutionEngine) getPriceForSysCall() int64 {
 	case "Neo.Storage.Get":
 		return 100
 	case "Neo.Storage.Put":
-		price := ((len(PeekNByteArray(1, e)) + len(PeekNByteArray(2, e)) - 1) / 1024 + 1) * 1000;
+		price := ((len(PeekNByteArray(1, e))+len(PeekNByteArray(2, e))-1)/1024 + 1) * 1000;
 		return int64(price)
 	case "Neo.Storage.Delete":
 		return 100
