@@ -588,7 +588,7 @@ func getResult(item types.StackItem) interface{} {
 	case *types.Integer:
 		return item.GetBigInteger()
 	case *types.ByteArray:
-		return BytesToHexString(item.GetByteArray())
+		return string(item.GetByteArray())
 	case *types.GeneralInterface:
 		interop := item.GetInterface()
 		return string(interop.Bytes())
