@@ -795,11 +795,7 @@ func GetBlockHeight(param Params) map[string]interface{} {
 }
 
 func GetBestBlockHash(param Params) map[string]interface{} {
-	height, ok := param.Uint("height")
-	if !ok {
-		return ResponsePack(InvalidParams, "height parameter should be a positive integer")
-	}
-
+	height := chain.DefaultLedger.Blockchain.BlockHeight
 	hash, err := chain.DefaultLedger.Store.GetBlockHash(height)
 	if err != nil {
 		return ResponsePack(InvalidParams, "")
