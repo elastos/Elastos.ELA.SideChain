@@ -4,9 +4,9 @@ import:
 - package: github.com/golang/sys
 - package: github.com/AlexpanXX/fsnotify
 - package: github.com/elastos/Elastos.ELA.SPV
-  version: dev
+  version: 3ac938
 - package: github.com/elastos/Elastos.ELA.Utility
-  version: dev
+  version: 652872
 - package: github.com/elastos/Elastos.ELA
   version: release_v0.2.0
 - package: github.com/gorilla/websocket
