@@ -64,17 +64,11 @@ func PowCheckBlockSanity(block *Block, powLimit *big.Int, timeSource MedianTimeS
 	}
 
 	transactions := block.Transactions
-	var rewardInCoinbase = Fixed64(0)
-	var totalTxFee = Fixed64(0)
 	for index, tx := range transactions {
 		// The first transaction in a block must be a coinbase.
 		if index == 0 {
 			if !tx.IsCoinBaseTx() {
 				return errors.New("[PowCheckBlockSanity] first transaction in block is not a coinbase")
-			}
-			// Calculate reward in coinbase
-			for _, output := range tx.Outputs {
-				rewardInCoinbase += output.Value
 			}
 			continue
 		}
@@ -83,14 +77,6 @@ func PowCheckBlockSanity(block *Block, powLimit *big.Int, timeSource MedianTimeS
 		if tx.IsCoinBaseTx() {
 			return errors.New("[PowCheckBlockSanity] block contains second coinbase")
 		}
-
-		// Calculate transaction fee
-		totalTxFee += GetTxFee(tx, DefaultLedger.Blockchain.AssetID)
-	}
-
-	// Reward in coinbase must match total transaction fee
-	if rewardInCoinbase != totalTxFee {
-		return errors.New("[PowCheckBlockSanity] reward amount in coinbase not correct")
 	}
 
 	txIds := make([]Uint256, 0, len(transactions))
@@ -143,6 +129,33 @@ func PowCheckBlockSanity(block *Block, powLimit *big.Int, timeSource MedianTimeS
 		return errors.New("[PowCheckBlockSanity] block merkle root is invalid")
 	}
 
+	return nil
+}
+
+func CheckBlockContext(block *Block) error {
+	var rewardInCoinbase = Fixed64(0)
+	var totalTxFee = Fixed64(0)
+
+	for index, tx := range block.Transactions {
+		if errCode := CheckTransactionContext(tx); errCode != Success {
+			return errors.New("CheckTransactionContext failed when verifiy block")
+		}
+
+		if index == 0 {
+			// Calculate reward in coinbase
+			for _, output := range tx.Outputs {
+				rewardInCoinbase += output.Value
+			}
+			continue
+		}
+		// Calculate transaction fee
+		totalTxFee += GetTxFee(tx, DefaultLedger.Blockchain.AssetID)
+	}
+
+	// Reward in coinbase must match total transaction fee
+	if rewardInCoinbase != totalTxFee {
+		return errors.New("reward amount in coinbase not correct")
+	}
 	return nil
 }
 
