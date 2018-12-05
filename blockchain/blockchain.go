@@ -12,7 +12,6 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/auxpow"
 	"github.com/elastos/Elastos.ELA.SideChain/config"
 	"github.com/elastos/Elastos.ELA.SideChain/core"
-	. "github.com/elastos/Elastos.ELA.SideChain/errors"
 	"github.com/elastos/Elastos.ELA.SideChain/events"
 	"github.com/elastos/Elastos.ELA.SideChain/log"
 
@@ -791,11 +790,9 @@ func (bc *Blockchain) DisconnectBlock(node *BlockNode, block *core.Block) error 
 // (best) chain.
 func (bc *Blockchain) ConnectBlock(node *BlockNode, block *core.Block) error {
 
-	for _, txVerify := range block.Transactions {
-		if errCode := CheckTransactionContext(txVerify); errCode != Success {
-			fmt.Println("CheckTransactionContext failed when verifiy block", errCode)
-			return errors.New(fmt.Sprintf("CheckTransactionContext failed when verifiy block"))
-		}
+	if err := CheckBlockContext(block); err != nil {
+		log.Errorf("CheckBlockContext error %s", err.Error())
+		return err
 	}
 
 	// Make sure it's extending the end of the best chain.
