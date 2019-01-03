@@ -3,13 +3,15 @@ package mempool
 import (
 	"bytes"
 	"errors"
+
 	"github.com/elastos/Elastos.ELA.SideChain/blockchain"
 	"github.com/elastos/Elastos.ELA.SideChain/config"
 
 	"github.com/elastos/Elastos.ELA.SideChain/types"
 
-	"github.com/elastos/Elastos.ELA.Utility/common"
-	"github.com/elastos/Elastos.ELA/core"
+	"github.com/elastos/Elastos.ELA/common"
+	ela "github.com/elastos/Elastos.ELA/core/types"
+	"github.com/elastos/Elastos.ELA/core/types/payload"
 )
 
 type FeeHelper struct {
@@ -38,13 +40,13 @@ func (h *FeeHelper) GetTxFeeMap(tx *types.Transaction) (map[common.Uint256]commo
 
 	if tx.IsRechargeToSideChainTx() {
 		depositPayload := tx.Payload.(*types.PayloadRechargeToSideChain)
-		mainChainTransaction := new(core.Transaction)
+		mainChainTransaction := new(ela.Transaction)
 		reader := bytes.NewReader(depositPayload.MainChainTransaction)
 		if err := mainChainTransaction.Deserialize(reader); err != nil {
 			return nil, errors.New("GetTxFeeMap mainChainTransaction deserialize failed")
 		}
 
-		crossChainPayload := mainChainTransaction.Payload.(*core.PayloadTransferCrossChainAsset)
+		crossChainPayload := mainChainTransaction.Payload.(*payload.PayloadTransferCrossChainAsset)
 
 		for _, v := range tx.Outputs {
 			for i := 0; i < len(crossChainPayload.CrossChainAddresses); i++ {
