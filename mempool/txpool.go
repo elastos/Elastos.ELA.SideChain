@@ -161,12 +161,25 @@ func (p *TxPool) verifyDoubleSpend(tx *types.Transaction) error {
 }
 
 func (p *TxPool) IsDuplicateMainchainTx(mainchainTxHash Uint256) bool {
+	p.Lock()
+	defer p.Unlock()
 	_, ok := p.mainchainTxList[mainchainTxHash]
 	if ok {
 		return true
 	}
 
 	return false
+}
+
+func (p *TxPool) getMainchainTx(mainchainTxHash Uint256) (types.Transaction, bool) {
+	p.Lock()
+	defer p.Unlock()
+	tx, ok := p.mainchainTxList[mainchainTxHash]
+	if !ok {
+		return types.Transaction{}, ok
+	}
+
+	return *tx, ok
 }
 
 //check and add to mainchain tx pool
@@ -180,11 +193,11 @@ func (p *TxPool) verifyDuplicateMainchainTx(txn *types.Transaction) error {
 	if err != nil {
 		return err
 	}
-	_, exist := p.mainchainTxList[*hash]
-	if exist {
-		return errors.New("duplicate mainchain tx detected")
-	}
 
+	if p.IsDuplicateMainchainTx(*hash) {
+		return errors.New("duplicate mainchain tx detected")
+
+	}
 	p.addMainchainTx(txn)
 
 	return nil
@@ -226,8 +239,8 @@ func (p *TxPool) cleanMainchainTx(txs []*types.Transaction) {
 				log.Error("get hash failed when clean mainchain tx:", txn.Hash())
 				continue
 			}
-			poolTx := p.mainchainTxList[*mainTxHash]
-			if poolTx != nil {
+			poolTx, ok := p.getMainchainTx(*mainTxHash)
+			if ok {
 				// delete tx
 				p.delFromTxList(poolTx.Hash())
 				// delete utxo
