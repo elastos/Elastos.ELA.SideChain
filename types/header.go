@@ -10,14 +10,16 @@ import (
 )
 
 type Header struct {
-	Version    uint32
-	Previous   common.Uint256
-	MerkleRoot common.Uint256
-	Timestamp  uint32
-	Bits       uint32
-	Nonce      uint32
-	Height     uint32
-	SideAuxPow auxpow.SideAuxPow
+	Version     uint32
+	Previous    common.Uint256
+	MerkleRoot  common.Uint256
+	Timestamp   uint32
+	Bits        uint32
+	Nonce       uint32
+	Height      uint32
+	SideAuxPow  auxpow.SideAuxPow
+	ReceiptHash common.Uint256
+	Bloom       []byte
 }
 
 func (header *Header) Serialize(w io.Writer) error {
@@ -44,7 +46,13 @@ func (header *Header) Deserialize(r io.Reader) error {
 		&header.Bits,
 		&header.Nonce,
 		&header.Height,
+		&header.ReceiptHash,
 	)
+	if err != nil {
+		return err
+	}
+
+	header.Bloom, err = common.ReadVarBytes(r, 256, "Bloom" )
 	if err != nil {
 		return err
 	}
@@ -61,7 +69,7 @@ func (header *Header) Deserialize(r io.Reader) error {
 }
 
 func (header *Header) serializeNoAux(w io.Writer) error {
-	return common.WriteElements(w,
+	err := common.WriteElements(w,
 		header.Version,
 		&header.Previous,
 		&header.MerkleRoot,
@@ -69,7 +77,13 @@ func (header *Header) serializeNoAux(w io.Writer) error {
 		header.Bits,
 		header.Nonce,
 		header.Height,
+		&header.ReceiptHash,
 	)
+	if err != nil {
+		return err
+	}
+	return common.WriteVarBytes(w, header.Bloom)
+	//return nil
 }
 
 func (header *Header) Hash() common.Uint256 {
