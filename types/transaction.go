@@ -24,7 +24,21 @@ const (
 	RechargeToSideChain     TxType = 0x06
 	WithdrawFromSideChain   TxType = 0x07
 	TransferCrossChainAsset TxType = 0x08
-	Invoke                  TxType = 0x09
+
+	RegisterProducer  TxType = 0x09
+	CancelProducer    TxType = 0x0a
+	UpdateProducer    TxType = 0x0b
+	ReturnDepositCoin TxType = 0x0c
+	ActivateProducer  TxType = 0x0d
+
+	IllegalProposalEvidence  TxType = 0x0e
+	IllegalVoteEvidence      TxType = 0x0f
+	IllegalBlockEvidence     TxType = 0x10
+	IllegalSidechainEvidence TxType = 0x11
+	InactiveArbitrators      TxType = 0x12
+	UpdateVersion            TxType = 0x13
+
+	Invoke                   TxType = 0xf0
 
 	InvalidTransactionSize = -1
 )
