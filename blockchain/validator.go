@@ -118,6 +118,7 @@ func (v *Validator) checkHeader(params ...interface{}) error {
 	if height > v.chain.chainParams.CheckPowHeaderHeight {
 		validateHeight := header.GetAuxPow().MainBlockHeader.Height
 		if validateHeight >= v.chain.chainParams.CRClaimDPOSNodeStartHeight {
+			log.Info("@@@@@@@@@@@ after CRClaimDPOSNodeStartHeight: check start")
 			if err := v.spvService.CheckCRCArbiterSignatureV1(validateHeight, &header.GetAuxPow().SideAuxBlockTx); err != nil {
 				return err
 			}
@@ -129,6 +130,7 @@ func (v *Validator) checkHeader(params ...interface{}) error {
 				return errors.New("[powCheckHeader] bits not matched")
 			}
 		} else {
+			log.Info("@@@@@@@@@@@ before CRClaimDPOSNodeStartHeight: check start")
 			if err := v.spvService.CheckCRCArbiterSignatureV0(&header.GetAuxPow().SideAuxBlockTx); err != nil {
 				return err
 			}
@@ -181,7 +183,7 @@ func (v *Validator) checkBlockSize(params ...interface{}) (err error) {
 
 	// A block must not exceed the maximum allowed block payload when serialized.
 	blockSize := block.GetSize()
-	if blockSize > int(types.MaxBlockSize+ types.MaxBlockHeaderSize) {
+	if blockSize > int(types.MaxBlockSize+types.MaxBlockHeaderSize) {
 		return errors.New("[powCheckBlockSize] serialized block is too big")
 	}
 	return nil
