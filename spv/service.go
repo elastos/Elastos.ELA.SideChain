@@ -161,6 +161,13 @@ func (s *Service) CheckCRCArbiterSignatureV1(height uint32, sideChainPowTx *ela.
 			return nil
 		}
 	}
+	log.Info("@@@@@@@@@@@@@@@@@@@@@@@")
+	log.Info("@@@@ main height:", height)
+	for _, v := range crcArbiters {
+		log.Info("@@@@ arbiter:", common.BytesToHexString(v))
+	}
+	log.Info("@@@@@@@@@@@@@@@@@@@@@@@")
+
 	return errors.New("CRC arbiter expected")
 }
 
