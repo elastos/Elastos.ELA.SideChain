@@ -115,6 +115,7 @@ func (v *Validator) checkHeader(params ...interface{}) error {
 	if headerSize > int(pact.MaxBlockHeaderSize) {
 		return errors.New("[checkHeader] checkHeader header is too big")
 	}
+	log.Info("@@@@@@@@ current height:", height, "CheckPowHeaderHeight:", v.chain.chainParams.CheckPowHeaderHeight, "CRClaimDPOSNodeStartHeight:", v.chain.chainParams.CRClaimDPOSNodeStartHeight)
 	if height > v.chain.chainParams.CheckPowHeaderHeight {
 		validateHeight := header.GetAuxPow().MainBlockHeader.Height
 		if validateHeight >= v.chain.chainParams.CRClaimDPOSNodeStartHeight {
