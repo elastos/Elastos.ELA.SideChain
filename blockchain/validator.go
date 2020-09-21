@@ -176,7 +176,7 @@ func (v *Validator) checkHeaderContext(params ...interface{}) error {
 	if height > v.chain.chainParams.CheckPowHeaderHeight {
 		validateHeight := header.GetAuxPow().MainBlockHeader.Height
 		if validateHeight >= v.chain.chainParams.CRClaimDPOSNodeStartHeight {
-			log.Info("@@@@@@@@@@@ after CRClaimDPOSNodeStartHeight: check start")
+			log.Info("@@@@@@@@@@@ after CRClaimDPOSNodeStartHeight: check start, main chain height:", validateHeight)
 			if err := v.spvService.CheckCRCArbiterSignatureV1(validateHeight, &header.GetAuxPow().SideAuxBlockTx); err != nil {
 				return err
 			}
@@ -188,7 +188,7 @@ func (v *Validator) checkHeaderContext(params ...interface{}) error {
 				return errors.New("[powCheckHeader] bits not matched")
 			}
 		} else {
-			log.Info("@@@@@@@@@@@ before CRClaimDPOSNodeStartHeight: check start")
+			log.Info("@@@@@@@@@@@ before CRClaimDPOSNodeStartHeight: check start, main chain height:", validateHeight)
 			if err := v.spvService.CheckCRCArbiterSignatureV0(&header.GetAuxPow().SideAuxBlockTx); err != nil {
 				return err
 			}
