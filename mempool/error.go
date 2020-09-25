@@ -11,21 +11,22 @@ var ErrBreak = fmt.Errorf("break out from here")
 type ErrorCode int
 
 const (
-	ErrInvalidInput         ErrorCode = 45003
-	ErrInvalidOutput        ErrorCode = 45004
-	ErrAssetPrecision       ErrorCode = 45005
-	ErrTransactionBalance   ErrorCode = 45006
-	ErrAttributeProgram     ErrorCode = 45007
-	ErrTransactionSignature ErrorCode = 45008
-	ErrTransactionPayload   ErrorCode = 45009
-	ErrDoubleSpend          ErrorCode = 45010
-	ErrTxHashDuplicate      ErrorCode = 45011
-	ErrMainchainTxDuplicate ErrorCode = 45013
-	ErrTransactionSize      ErrorCode = 45015
-	ErrUnknownReferedTx     ErrorCode = 45016
+	ErrIneffectiveCoinbase  ErrorCode = -12001
+	ErrInvalidInput         ErrorCode = -22001
+	ErrInvalidOutput        ErrorCode = -22002
+	ErrTransactionBalance   ErrorCode = -22003
+	ErrAttributeProgram     ErrorCode = -22004
+	ErrTransactionSignature ErrorCode = -22005
+	ErrTransactionPayload   ErrorCode = -22006
+	ErrDoubleSpend          ErrorCode = -22007
+	ErrTransactionSize      ErrorCode = -22008
+	ErrUnknownReferedTx     ErrorCode = -22009
+	ErrUTXOLocked           ErrorCode = -22010
+	ErrMainchainTxDuplicate ErrorCode = -22011
+	ErrAssetPrecision       ErrorCode = -22013
+	ErrTxHashDuplicate      ErrorCode = -23001
+
 	ErrInvalidReferedTx     ErrorCode = 45017
-	ErrIneffectiveCoinbase  ErrorCode = 45018
-	ErrUTXOLocked           ErrorCode = 45019
 	ErrRechargeToSideChain  ErrorCode = 45020
 	ErrCrossChain           ErrorCode = 45021
 )
