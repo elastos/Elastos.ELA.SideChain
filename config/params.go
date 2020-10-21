@@ -91,6 +91,9 @@ type Params struct {
 	// CheckRegisterDIDHeight defines the height to check RegisterDID transactions.
 	CheckRegisterDIDHeight uint32
 
+	//VeriﬁableCredentialHeight defines the height to VeriﬁableCredential.
+	VeriﬁableCredentialHeight uint32
+
 	// RewardMinerOnlyStartHeight defines the height where starting reward miner only
 	// in coin base transaction.
 	RewardMinerOnlyStartHeight uint32
