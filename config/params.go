@@ -88,9 +88,6 @@ type Params struct {
 	// NewP2PProtocolVersionHeight defines the new p2p protocol version message height.
 	NewP2PProtocolVersionHeight uint64
 
-	// CheckRegisterDIDHeight defines the height to check RegisterDID transactions.
-	CheckRegisterDIDHeight uint32
-
 	// RewardMinerOnlyStartHeight defines the height where starting reward miner only
 	// in coin base transaction.
 	RewardMinerOnlyStartHeight uint32
