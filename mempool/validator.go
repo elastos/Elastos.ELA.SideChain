@@ -29,6 +29,7 @@ type TxValidateAction struct {
 
 type Validator struct {
 	chainParams           *config.Params
+	Chain       *blockchain.BlockChain
 	db                    *blockchain.ChainStore
 	txFeeHelper           *FeeHelper
 	spvService            *spv.Service
@@ -42,6 +43,7 @@ func NewValidator(cfg *Config) *Validator {
 		db:          cfg.ChainStore,
 		txFeeHelper: cfg.FeeHelper,
 		spvService:  cfg.SpvService,
+		Chain: cfg.Chain,
 	}
 
 	v.RegisterSanityFunc(FuncNames.CheckTransactionSize, v.checkTransactionSize)
@@ -553,6 +555,11 @@ func (v *Validator) checkRechargeToSideChainTransaction(txn *types.Transaction) 
 func (v *Validator) GetParams() *config.Params {
 	return v.chainParams
 }
+
+func (v *Validator) GetFeeHelper() *FeeHelper {
+	return v.txFeeHelper
+}
+
 
 func (v *Validator) checkTransferCrossChainAssetTransaction(txn *types.Transaction) error {
 	if !txn.IsTransferCrossChainAssetTx() {
