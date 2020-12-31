@@ -478,7 +478,10 @@ func GenerateBlockTransactions(cfg *Config, msgBlock *types.Block, coinBaseTx *t
 			continue
 		}
 
-		if err := cfg.Validator.CheckTransactionContext(tx); err != nil {
+		if err := cfg.Validator.CheckTransactionContext(tx,
+			msgBlock.GetHeight(), msgBlock.GetMainChainHeight()); err != nil {
+			log.Warnf("found invalid transaction:%s, err:%s",
+				common.ToReversedString(tx.Hash()), err)
 			continue
 		}
 

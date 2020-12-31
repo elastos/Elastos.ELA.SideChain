@@ -3,7 +3,6 @@ package spv
 import (
 	"bytes"
 	"errors"
-
 	"github.com/elastos/Elastos.ELA.SPV/bloom"
 	spv "github.com/elastos/Elastos.ELA.SPV/interface"
 	"github.com/elastos/Elastos.ELA.SPV/util"

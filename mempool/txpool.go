@@ -62,10 +62,12 @@ func (p *TxPool) AppendToTxPool(tx *types.Transaction) error {
 
 func (p *TxPool) appendToTxPool(tx *types.Transaction) error {
 	//verify transaction with Concurrency
-	if err := p.validator.CheckTransactionSanity(tx); err != nil {
+	if err := p.validator.CheckTransactionSanity(tx, p.chain.BestChain.Height,
+		p.chain.BestChain.MainChainHeight); err != nil {
 		return err
 	}
-	if err := p.validator.CheckTransactionContext(tx); err != nil {
+	if err := p.validator.CheckTransactionContext(tx, p.chain.BestChain.Height,
+		p.chain.BestChain.MainChainHeight); err != nil {
 		return err
 	}
 
