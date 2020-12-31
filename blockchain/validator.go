@@ -263,7 +263,7 @@ func (v *Validator) checkTransactionsMerkle(params ...interface{}) (err error) {
 		existingTxIds[txId] = struct{}{}
 
 		// Check for transaction sanity
-		if err := v.chain.cfg.CheckTxSanity(txn); err != nil {
+		if err := v.chain.cfg.CheckTxSanity(txn, block.GetHeight(), block.GetMainChainHeight()); err != nil {
 			return errors.New("[CheckTransactionsMerkle] failed when verifiy block, err:" + err.Error())
 		}
 
