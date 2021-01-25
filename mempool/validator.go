@@ -571,11 +571,7 @@ func (v *Validator) checkTransferCrossChainAssetTransaction(txn *types.Transacti
 		str := fmt.Sprint("[checkTransferCrossChainAssetTransaction] Invalid transfer cross chain asset payload type")
 		return ruleError(ErrCrossChain, str)
 	}
-	ca, err := v.spvService.GetConsensusAlgorithm(mainChainHeight)
-	if err != nil {
-		str := fmt.Sprint("[checkTransferCrossChainAssetTransaction] Failed to get consensus algorithm")
-		return ruleError(ErrCrossChain, str)
-	}
+	ca, _ := v.spvService.GetConsensusAlgorithm(mainChainHeight)
 	if ca == spvitf.POW {
 		str := fmt.Sprint("[checkTransferCrossChainAssetTransaction] Current consensus algorithm is POW")
 		return ruleError(ErrCrossChain, str)
