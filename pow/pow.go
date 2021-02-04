@@ -372,12 +372,12 @@ func CreateCoinBaseTx(cfg *Config, nextBlockHeight uint32, addr string) (*types.
 	txn.Outputs = []*types.Output{
 		{
 			AssetID:     cfg.ChainParams.ElaAssetId,
-			Value:       0,
+			Value:       100,
 			ProgramHash: cfg.ChainParams.Foundation,
 		},
 		{
 			AssetID:     cfg.ChainParams.ElaAssetId,
-			Value:       0,
+			Value:       100,
 			ProgramHash: *minerProgramHash,
 		},
 	}
