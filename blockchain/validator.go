@@ -164,32 +164,32 @@ func (v *Validator) checkHeader(params ...interface{}) error {
 
 func (v *Validator) checkHeaderContext(params ...interface{}) error {
 	block := AssertBlock(params[0])
-	header := block.Header
-	height := block.GetHeight()
+	//header := block.Header
+	//height := block.GetHeight()
 
 	headerSize := block.Header.GetHeaderSize()
 	if headerSize > int(types.MaxBlockHeaderSize) {
 		return errors.New("[checkHeader] checkHeader header is too big")
 	}
-	if height > v.chain.chainParams.CheckPowHeaderHeight {
-		validateHeight := header.GetAuxPow().MainBlockHeader.Height
-		if validateHeight >= v.chain.chainParams.CRClaimDPOSNodeStartHeight {
-			//if err := v.spvService.CheckCRCArbiterSignatureV1(validateHeight, &header.GetAuxPow().SideAuxBlockTx); err != nil {
-			//	return err
-			//}
-			spvHeader, err := v.spvService.HeaderStore().GetByHeight(validateHeight)
-			if err != nil {
-				return err
-			}
-			if spvHeader.Bits() != header.GetAuxPow().MainBlockHeader.Bits {
-				return errors.New("[powCheckHeader] bits not matched")
-			}
-		} else {
-			if err := v.spvService.CheckCRCArbiterSignatureV0(&header.GetAuxPow().SideAuxBlockTx); err != nil {
-				return err
-			}
-		}
-	}
+	//if height > v.chain.chainParams.CheckPowHeaderHeight {
+	//	validateHeight := header.GetAuxPow().MainBlockHeader.Height
+	//	if validateHeight >= v.chain.chainParams.CRClaimDPOSNodeStartHeight {
+	//		//if err := v.spvService.CheckCRCArbiterSignatureV1(validateHeight, &header.GetAuxPow().SideAuxBlockTx); err != nil {
+	//		//	return err
+	//		//}
+	//		spvHeader, err := v.spvService.HeaderStore().GetByHeight(validateHeight)
+	//		if err != nil {
+	//			return err
+	//		}
+	//		if spvHeader.Bits() != header.GetAuxPow().MainBlockHeader.Bits {
+	//			return errors.New("[powCheckHeader] bits not matched")
+	//		}
+	//	} else {
+	//		if err := v.spvService.CheckCRCArbiterSignatureV0(&header.GetAuxPow().SideAuxBlockTx); err != nil {
+	//			return err
+	//		}
+	//	}
+	//}
 	return nil
 }
 
