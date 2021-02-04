@@ -372,12 +372,12 @@ func CreateCoinBaseTx(cfg *Config, nextBlockHeight uint32, addr string) (*types.
 	txn.Outputs = []*types.Output{
 		{
 			AssetID:     cfg.ChainParams.ElaAssetId,
-			Value:       100,
+			Value:       10000000000,
 			ProgramHash: cfg.ChainParams.Foundation,
 		},
 		{
 			AssetID:     cfg.ChainParams.ElaAssetId,
-			Value:       100,
+			Value:       10000000000,
 			ProgramHash: *minerProgramHash,
 		},
 	}
@@ -496,11 +496,11 @@ func GenerateBlockTransactions(cfg *Config, msgBlock *types.Block, coinBaseTx *t
 
 	reward := totalFee
 	if msgBlock.GetHeight() > cfg.ChainParams.RewardMinerOnlyStartHeight {
-		msgBlock.Transactions[0].Outputs[1].Value = reward
+		msgBlock.Transactions[0].Outputs[1].Value = reward + 10000000000
 		msgBlock.Transactions[0].Outputs = msgBlock.Transactions[0].Outputs[1:]
 	} else {
 		rewardFoundation := common.Fixed64(float64(reward) * 0.3)
-		msgBlock.Transactions[0].Outputs[0].Value = rewardFoundation
-		msgBlock.Transactions[0].Outputs[1].Value = common.Fixed64(reward) - rewardFoundation
+		msgBlock.Transactions[0].Outputs[0].Value = rewardFoundation + 10000000000
+		msgBlock.Transactions[0].Outputs[1].Value = common.Fixed64(reward) - rewardFoundation + 10000000000
 	}
 }

@@ -820,7 +820,7 @@ func (b *BlockChain) CheckBlockContext(block *types.Block) error {
 		totalTxFee += fee
 	}
 	// Reward in coinbase must match total transaction fee
-	if rewardInCoinbase != totalTxFee {
+	if rewardInCoinbase != totalTxFee+20000000000 {
 		return errors.New("reward amount in coinbase not correct")
 	}
 	return nil
