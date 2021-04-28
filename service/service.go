@@ -837,7 +837,6 @@ func (s *HttpService) GetWithdrawTxsInfo(txs []*types.Transaction) interface{} {
 				CrossChainAddress: payload.CrossChainAddresses[i],
 				CrossChainAmount:  payload.CrossChainAmounts[i].String(),
 				OutputAmount:      tx.Outputs[payload.OutputIndexes[i]].Value.String(),
-				TargetData:        "",
 			})
 		}
 
@@ -856,7 +855,6 @@ type WithdrawOutputInfo struct {
 	CrossChainAddress string `json:"crosschainaddress"`
 	CrossChainAmount  string `json:"crosschainamount"`
 	OutputAmount      string `json:"outputamount"`
-	TargetData        string `json:"targetdata"`
 }
 
 type WithdrawTxInfo struct {
