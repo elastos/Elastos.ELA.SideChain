@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/elastos/Elastos.ELA/core/types/outputpayload"
 
 	"github.com/elastos/Elastos.ELA.SideChain/blockchain"
 	"github.com/elastos/Elastos.ELA.SideChain/config"
@@ -350,6 +351,9 @@ func (s *HttpService) SendRechargeToSideChainTxByHash(param http.Params) (interf
 }
 
 func createRechargeToSideChainTransaction(tx *ela.Transaction, genesisAddress string) (*types.Transaction, error) {
+	if tx.PayloadVersion >= payload.TransferCrossChainVersionV1 {
+		return createRechargeToSideChainTransactionV1(tx, genesisAddress)
+	}
 	rechargeInfo, err := parseRechargeToSideChainTransactionInfo(tx, genesisAddress)
 	if err != nil {
 		return nil, err
@@ -395,6 +399,61 @@ func parseRechargeToSideChainTransactionInfo(txn *ela.Transaction, genesisAddres
 		}
 	}
 	return result, nil
+}
+
+func createRechargeToSideChainTransactionV1(txn *ela.Transaction, genesisAddress string) (*types.Transaction, error) {
+	// create payload
+	payload := new(types.PayloadRechargeToSideChain)
+
+	// set transaction hash
+	hash := txn.Hash()
+	payload.MainChainTransactionHash = hash
+
+	// get assetId
+	asset := types.GetSystemAssetId()
+	assetId := &asset
+
+	// get cross chain address's program hash
+	crossChainHash, err := common.Uint168FromAddress(genesisAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	// set outputs
+	var txOutputs []*types.Output
+	for _, output := range txn.Outputs {
+		if output.Type != ela.OTCrossChain {
+			continue
+		}
+
+		if !crossChainHash.IsEqual(output.ProgramHash) {
+			continue
+		}
+
+		op, ok := output.Payload.(*outputpayload.CrossChainOutput)
+		if !ok {
+			return nil, errors.New("invalid cross chain output payload")
+		}
+		target, err := common.Uint168FromAddress(op.TargetAddress)
+		if err != nil {
+			return nil, err
+		}
+		output := &types.Output{
+			AssetID:     *assetId,
+			Value:       op.TargetAmount,
+			OutputLock:  0,
+			ProgramHash: *target,
+		}
+		txOutputs = append(txOutputs, output)
+	}
+
+	txTransaction := &types.Transaction{
+		TxType:         types.RechargeToSideChain,
+		PayloadVersion: types.RechargeToSideChainPayloadVersion1,
+		Payload:        payload,
+		Outputs:        txOutputs,
+	}
+	return txTransaction, nil
 }
 
 func createRechargeToSideChainTransactionByInfo(txInfo *RechargeToSideChainInfo) (*types.Transaction, error) {
