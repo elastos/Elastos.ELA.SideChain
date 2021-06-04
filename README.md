@@ -2,7 +2,5 @@
 
 ## Summary
 
-Elacoin is the digital currency solution within Elastos eco system.
+This repository is just another project-dependent library.
 
-## Run
-This repository is just another project-dependent library
