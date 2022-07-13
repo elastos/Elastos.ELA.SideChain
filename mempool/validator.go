@@ -16,7 +16,8 @@ import (
 	spvitf "github.com/elastos/Elastos.ELA.SPV/interface"
 	"github.com/elastos/Elastos.ELA/common"
 	"github.com/elastos/Elastos.ELA/core/contract"
-	core "github.com/elastos/Elastos.ELA/core/types"
+	"github.com/elastos/Elastos.ELA/core/types/functions"
+	it "github.com/elastos/Elastos.ELA/core/types/interfaces"
 	"github.com/elastos/Elastos.ELA/core/types/payload"
 	"github.com/elastos/Elastos.ELA/elanet/bloom"
 )
@@ -458,7 +459,7 @@ func (v *Validator) checkRechargeToSideChainTransaction(txn *types.Transaction, 
 		return ruleError(ErrRechargeToSideChain, str)
 	}
 
-	mainChainTransaction := new(core.Transaction)
+	var mainChainTransaction it.Transaction
 	if txn.PayloadVersion == types.RechargeToSideChainPayloadVersion0 {
 		proof := new(bloom.MerkleProof)
 		reader := bytes.NewReader(payloadRecharge.MerkleProof)
@@ -467,6 +468,11 @@ func (v *Validator) checkRechargeToSideChainTransaction(txn *types.Transaction, 
 			return ruleError(ErrRechargeToSideChain, str)
 		}
 		reader = bytes.NewReader(payloadRecharge.MainChainTransaction)
+		mainChainTransaction, err := functions.GetTransactionByBytes(reader)
+		if err != nil {
+			str := fmt.Sprint("[checkRechargeToSideChainTransaction] RechargeToSideChain mainChainTransaction deserialize failed")
+			return ruleError(ErrRechargeToSideChain, str)
+		}
 		if err := mainChainTransaction.Deserialize(reader); err != nil {
 			str := fmt.Sprint("[checkRechargeToSideChainTransaction] RechargeToSideChain mainChainTransaction deserialize failed")
 			return ruleError(ErrRechargeToSideChain, str)
@@ -489,7 +495,7 @@ func (v *Validator) checkRechargeToSideChainTransaction(txn *types.Transaction, 
 		return ruleError(ErrRechargeToSideChain, str)
 	}
 
-	payloadObj, ok := mainChainTransaction.Payload.(*payload.TransferCrossChainAsset)
+	payloadObj, ok := mainChainTransaction.Payload().(*payload.TransferCrossChainAsset)
 	if !ok {
 		str := fmt.Sprint("[checkRechargeToSideChainTransaction] Invalid PayloadTransferCrossChainAsset")
 		return ruleError(ErrRechargeToSideChain, str)
@@ -505,9 +511,9 @@ func (v *Validator) checkRechargeToSideChainTransaction(txn *types.Transaction, 
 	//check output fee and rate
 	var oriOutputTotalAmount common.Fixed64
 	for i := 0; i < len(payloadObj.CrossChainAddresses); i++ {
-		if mainChainTransaction.Outputs[payloadObj.OutputIndexes[i]].ProgramHash.IsEqual(*genesisProgramHash) {
+		if mainChainTransaction.Outputs()[payloadObj.OutputIndexes[i]].ProgramHash.IsEqual(*genesisProgramHash) {
 			if payloadObj.CrossChainAmounts[i] < 0 || payloadObj.CrossChainAmounts[i] >
-				mainChainTransaction.Outputs[payloadObj.OutputIndexes[i]].Value-
+				mainChainTransaction.Outputs()[payloadObj.OutputIndexes[i]].Value-
 					common.Fixed64(v.chainParams.MinCrossChainTxFee) {
 				str := fmt.Sprint("[checkRechargeToSideChainTransaction] Invalid transaction cross chain amount")
 				return ruleError(ErrRechargeToSideChain, str)

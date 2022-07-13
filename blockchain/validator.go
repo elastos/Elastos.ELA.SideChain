@@ -185,7 +185,7 @@ func (v *Validator) checkHeaderContext(params ...interface{}) error {
 				return errors.New("[powCheckHeader] bits not matched")
 			}
 		} else {
-			if err := v.spvService.CheckCRCArbiterSignatureV0(&header.GetAuxPow().SideAuxBlockTx); err != nil {
+			if err := v.spvService.CheckCRCArbiterSignatureV0(header.GetAuxPow().SideAuxBlockTx); err != nil {
 				return err
 			}
 		}

@@ -6,7 +6,8 @@ import (
 
 	"github.com/elastos/Elastos.ELA/auxpow"
 	"github.com/elastos/Elastos.ELA/common"
-	ela "github.com/elastos/Elastos.ELA/core/types"
+	ela "github.com/elastos/Elastos.ELA/core/types/interfaces"
+	elacommon "github.com/elastos/Elastos.ELA/core/types/common"
 	"github.com/elastos/Elastos.ELA/core/types/payload"
 )
 
@@ -14,13 +15,13 @@ type SideAuxPow struct {
 	SideAuxMerkleBranch []common.Uint256
 	SideAuxMerkleIndex  int
 	SideAuxBlockTx      ela.Transaction
-	MainBlockHeader     ela.Header
+	MainBlockHeader     elacommon.Header
 }
 
 func NewSideAuxPow(sideAuxMerkleBranch []common.Uint256,
 	sideAuxMerkleIndex int,
 	sideAuxBlockTx ela.Transaction,
-	mainBlockHeader ela.Header) *SideAuxPow {
+	mainBlockHeader elacommon.Header) *SideAuxPow {
 
 	return &SideAuxPow{
 		SideAuxMerkleBranch: sideAuxMerkleBranch,
@@ -98,7 +99,7 @@ func (sap *SideAuxPow) SideAuxPowCheck(hashAuxBlock common.Uint256) error {
 		return errors.New("sideAuxPowMerkleRoot check is failed")
 	}
 
-	payloadData := sap.SideAuxBlockTx.Payload.Data(payload.SideChainPowVersion)
+	payloadData := sap.SideAuxBlockTx.Payload().Data(payload.SideChainPowVersion)
 	payloadHashData := payloadData[0:32]
 	payloadHash, err := common.Uint256FromBytes(payloadHashData)
 	if err != nil {

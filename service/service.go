@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	elacommon "github.com/elastos/Elastos.ELA/core/types/common"
 	"github.com/elastos/Elastos.ELA/core/types/outputpayload"
 
 	"github.com/elastos/Elastos.ELA.SideChain/blockchain"
@@ -18,7 +19,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/types"
 
 	"github.com/elastos/Elastos.ELA/common"
-	ela "github.com/elastos/Elastos.ELA/core/types"
+	ela "github.com/elastos/Elastos.ELA/core/types/interfaces"
 	"github.com/elastos/Elastos.ELA/core/types/payload"
 	"github.com/elastos/Elastos.ELA/p2p/msg"
 	"github.com/elastos/Elastos.ELA/utils/elalog"
@@ -350,8 +351,8 @@ func (s *HttpService) SendRechargeToSideChainTxByHash(param http.Params) (interf
 	return depositTx.Hash().String(), nil
 }
 
-func createRechargeToSideChainTransaction(tx *ela.Transaction, genesisAddress string) (*types.Transaction, error) {
-	if tx.PayloadVersion >= payload.TransferCrossChainVersionV1 {
+func createRechargeToSideChainTransaction(tx ela.Transaction, genesisAddress string) (*types.Transaction, error) {
+	if tx.PayloadVersion() >= payload.TransferCrossChainVersionV1 {
 		return createRechargeToSideChainTransactionV1(tx, genesisAddress)
 	}
 	rechargeInfo, err := parseRechargeToSideChainTransactionInfo(tx, genesisAddress)
@@ -373,13 +374,13 @@ type RechargeToSideChainInfo struct {
 	DepositAssets            []*RechargeToSideChainAsset
 }
 
-func parseRechargeToSideChainTransactionInfo(txn *ela.Transaction, genesisAddress string) (*RechargeToSideChainInfo, error) {
+func parseRechargeToSideChainTransactionInfo(txn ela.Transaction, genesisAddress string) (*RechargeToSideChainInfo, error) {
 	result := new(RechargeToSideChainInfo)
-	payloadObj, ok := txn.Payload.(*payload.TransferCrossChainAsset)
+	payloadObj, ok := txn.Payload().(*payload.TransferCrossChainAsset)
 	if !ok {
 		return nil, errors.New("Invalid payload")
 	}
-	if len(txn.Outputs) == 0 {
+	if len(txn.Outputs()) == 0 {
 		return nil, errors.New("Invalid TransferCrossChainAsset payload, outputs is null")
 	}
 	programHash, err := common.Uint168FromAddress(genesisAddress)
@@ -390,10 +391,10 @@ func parseRechargeToSideChainTransactionInfo(txn *ela.Transaction, genesisAddres
 	result.MainChainTransactionHash = &hash
 	result.DepositAssets = make([]*RechargeToSideChainAsset, 0)
 	for i := 0; i < len(payloadObj.CrossChainAddresses); i++ {
-		if txn.Outputs[payloadObj.OutputIndexes[i]].ProgramHash.IsEqual(*programHash) {
+		if txn.Outputs()[payloadObj.OutputIndexes[i]].ProgramHash.IsEqual(*programHash) {
 			result.DepositAssets = append(result.DepositAssets, &RechargeToSideChainAsset{
 				TargetAddress:    payloadObj.CrossChainAddresses[i],
-				Amount:           &txn.Outputs[payloadObj.OutputIndexes[i]].Value,
+				Amount:           &txn.Outputs()[payloadObj.OutputIndexes[i]].Value,
 				CrossChainAmount: &payloadObj.CrossChainAmounts[i],
 			})
 		}
@@ -401,7 +402,7 @@ func parseRechargeToSideChainTransactionInfo(txn *ela.Transaction, genesisAddres
 	return result, nil
 }
 
-func createRechargeToSideChainTransactionV1(txn *ela.Transaction, genesisAddress string) (*types.Transaction, error) {
+func createRechargeToSideChainTransactionV1(txn ela.Transaction, genesisAddress string) (*types.Transaction, error) {
 	// create payload
 	payload := new(types.PayloadRechargeToSideChain)
 
@@ -421,8 +422,8 @@ func createRechargeToSideChainTransactionV1(txn *ela.Transaction, genesisAddress
 
 	// set outputs
 	var txOutputs []*types.Output
-	for _, output := range txn.Outputs {
-		if output.Type != ela.OTCrossChain {
+	for _, output := range txn.Outputs() {
+		if output.Type != elacommon.OTCrossChain {
 			continue
 		}
 
