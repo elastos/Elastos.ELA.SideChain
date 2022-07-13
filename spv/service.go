@@ -9,7 +9,9 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain/types"
 	"github.com/elastos/Elastos.ELA/common"
 	"github.com/elastos/Elastos.ELA/common/config"
-	ela "github.com/elastos/Elastos.ELA/core/types"
+	elacommon "github.com/elastos/Elastos.ELA/core/types/common"
+	"github.com/elastos/Elastos.ELA/core/types/functions"
+	it "github.com/elastos/Elastos.ELA/core/types/interfaces"
 	elapayload "github.com/elastos/Elastos.ELA/core/types/payload"
 	"github.com/elastos/Elastos.ELA/crypto"
 )
@@ -82,7 +84,6 @@ func (s *Service) VerifyTransaction(tx *types.Transaction) error {
 	case types.RechargeToSideChainPayloadVersion0:
 
 		proof := new(bloom.MerkleProof)
-		mainChainTransaction := new(ela.Transaction)
 
 		reader := bytes.NewReader(payload.MerkleProof)
 		if err := proof.Deserialize(reader); err != nil {
@@ -90,11 +91,16 @@ func (s *Service) VerifyTransaction(tx *types.Transaction) error {
 		}
 
 		reader = bytes.NewReader(payload.MainChainTransaction)
+		mainChainTransaction, err := functions.GetTransactionByBytes(reader)
+		if err != nil {
+			return err
+		}
+
 		if err := mainChainTransaction.Deserialize(reader); err != nil {
 			return errors.New("[VerifyTransaction] RechargeToSideChain mainChainTransaction deserialize failed")
 		}
 
-		if err := s.SPVService.VerifyTransaction(*proof, *mainChainTransaction); err != nil {
+		if err := s.SPVService.VerifyTransaction(*proof, mainChainTransaction); err != nil {
 			return errors.New("[VerifyTransaction] SPV module verify transaction failed.")
 		}
 
@@ -112,8 +118,8 @@ func (s *Service) VerifyTransaction(tx *types.Transaction) error {
 	return nil
 }
 
-func (s *Service) CheckCRCArbiterSignatureV0(sideChainPowTx *ela.Transaction) error {
-	payload, ok := sideChainPowTx.Payload.(*elapayload.SideChainPow)
+func (s *Service) CheckCRCArbiterSignatureV0(sideChainPowTx it.Transaction) error {
+	payload, ok := sideChainPowTx.Payload().(*elapayload.SideChainPow)
 	if !ok {
 		return errors.New("[checkCRCArbiterSignature], invalid sideChainPow tx")
 	}
@@ -137,8 +143,8 @@ func (s *Service) CheckCRCArbiterSignatureV0(sideChainPowTx *ela.Transaction) er
 	return errors.New("CRC arbiter expected.")
 }
 
-func (s *Service) CheckCRCArbiterSignatureV1(height uint32, sideChainPowTx *ela.Transaction) error {
-	payload, ok := sideChainPowTx.Payload.(*elapayload.SideChainPow)
+func (s *Service) CheckCRCArbiterSignatureV1(height uint32, sideChainPowTx it.Transaction) error {
+	payload, ok := sideChainPowTx.Payload().(*elapayload.SideChainPow)
 	if !ok {
 		return errors.New("[checkCRCArbiterSignature], invalid sideChainPow tx")
 	}
@@ -175,15 +181,15 @@ func (l *listener) Address() string {
 	return l.address
 }
 
-func (l *listener) Type() ela.TxType {
-	return ela.TransferCrossChainAsset
+func (l *listener) Type() elacommon.TxType {
+	return elacommon.TransferCrossChainAsset
 }
 
 func (l *listener) Flags() uint64 {
 	return spv.FlagNotifyInSyncing
 }
 
-func (l *listener) Notify(id common.Uint256, proof bloom.MerkleProof, tx ela.Transaction) {
+func (l *listener) Notify(id common.Uint256, proof bloom.MerkleProof, tx it.Transaction) {
 	l.service.SubmitTransactionReceipt(id, tx.Hash())
 }
 

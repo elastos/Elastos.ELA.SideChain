@@ -85,17 +85,17 @@ func (b *Block) Deserialize(r io.Reader) error {
 
 func (b *Block) Trim(w io.Writer) error {
 	if err := b.Header.Serialize(w); err != nil {
-		return fmt.Errorf("Trim block serialize header failed:", err)
+		return fmt.Errorf("Trim block serialize header failed:%s", err)
 	}
 
 	if err := common.WriteUint32(w, uint32(len(b.Transactions))); err != nil {
-		return fmt.Errorf("Trim block write txs len failed:", err)
+		return fmt.Errorf("Trim block write txs len failed:%s", err)
 	}
 
 	for _, transaction := range b.Transactions {
 		hash := transaction.Hash()
 		if err := hash.Serialize(w); err != nil {
-			return fmt.Errorf("Trim block serialize tx hash failed:", err)
+			return fmt.Errorf("Trim block serialize tx hash failed:%s", err)
 		}
 	}
 
