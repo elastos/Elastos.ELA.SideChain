@@ -6,8 +6,9 @@ import (
 
 	"github.com/elastos/Elastos.ELA/auxpow"
 	"github.com/elastos/Elastos.ELA/common"
-	ela "github.com/elastos/Elastos.ELA/core/types/interfaces"
+	elatx "github.com/elastos/Elastos.ELA/core/transaction"
 	elacommon "github.com/elastos/Elastos.ELA/core/types/common"
+	ela "github.com/elastos/Elastos.ELA/core/types/interfaces"
 	"github.com/elastos/Elastos.ELA/core/types/payload"
 )
 
@@ -58,10 +59,17 @@ func (sap *SideAuxPow) Serialize(w io.Writer) error {
 }
 
 func (sap *SideAuxPow) Deserialize(r io.Reader) error {
-	err := sap.SideAuxBlockTx.Deserialize(r)
+	tx, err := elatx.GetTransactionByBytes(r)
 	if err != nil {
 		return err
 	}
+
+	err = tx.Deserialize(r)
+	if err != nil {
+		return err
+	}
+
+	sap.SideAuxBlockTx = tx
 
 	count, err := common.ReadUint32(r)
 	if err != nil {
