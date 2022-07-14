@@ -122,6 +122,10 @@ func (header *Header) GetHeight() uint32 {
 	return header.Base.Height
 }
 
+func (header *Header) GetMainChainHeight() uint32 {
+	return header.SideAuxPow.MainBlockHeader.Height
+}
+
 func (header *Header) GetBits() uint32 {
 	return header.Base.Bits
 }

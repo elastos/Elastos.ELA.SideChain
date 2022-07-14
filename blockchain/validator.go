@@ -174,9 +174,9 @@ func (v *Validator) checkHeaderContext(params ...interface{}) error {
 	if height > v.chain.chainParams.CheckPowHeaderHeight {
 		validateHeight := header.GetAuxPow().MainBlockHeader.Height
 		if validateHeight >= v.chain.chainParams.CRClaimDPOSNodeStartHeight {
-			if err := v.spvService.CheckCRCArbiterSignatureV1(validateHeight, &header.GetAuxPow().SideAuxBlockTx); err != nil {
-				return err
-			}
+			//if err := v.spvService.CheckCRCArbiterSignatureV1(validateHeight, &header.GetAuxPow().SideAuxBlockTx); err != nil {
+			//	return err
+			//}
 			spvHeader, err := v.spvService.HeaderStore().GetByHeight(validateHeight)
 			if err != nil {
 				return err
@@ -263,7 +263,7 @@ func (v *Validator) checkTransactionsMerkle(params ...interface{}) (err error) {
 		existingTxIds[txId] = struct{}{}
 
 		// Check for transaction sanity
-		if err := v.chain.cfg.CheckTxSanity(txn); err != nil {
+		if err := v.chain.cfg.CheckTxSanity(txn, block.GetHeight(), block.GetMainChainHeight()); err != nil {
 			return errors.New("[CheckTransactionsMerkle] failed when verifiy block, err:" + err.Error())
 		}
 
