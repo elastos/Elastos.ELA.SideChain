@@ -3,6 +3,7 @@ package spv
 import (
 	"bytes"
 	"errors"
+
 	"github.com/elastos/Elastos.ELA.SPV/bloom"
 	spv "github.com/elastos/Elastos.ELA.SPV/interface"
 	"github.com/elastos/Elastos.ELA.SPV/util"
@@ -21,7 +22,7 @@ type Config struct {
 	DataDir string
 
 	// The chain parameters within network settings.
-	ChainParams *config.Params
+	ChainParams *config.Configuration
 
 	// PermanentPeers are the peers need to be connected permanently.
 	PermanentPeers []string
@@ -37,7 +38,7 @@ type Config struct {
 
 type Service struct {
 	spv.SPVService
-	chainParams *config.Params
+	chainParams *config.Configuration
 }
 
 func NewService(cfg *Config) (*Service, error) {
@@ -123,7 +124,7 @@ func (s *Service) CheckCRCArbiterSignatureV0(sideChainPowTx it.Transaction) erro
 	if !ok {
 		return errors.New("[checkCRCArbiterSignature], invalid sideChainPow tx")
 	}
-	for _, v := range s.chainParams.CRCArbiters {
+	for _, v := range s.chainParams.DPoSConfiguration.CRCArbiters {
 		CRC, err := common.HexStringToBytes(v)
 		if err != nil {
 			return err
